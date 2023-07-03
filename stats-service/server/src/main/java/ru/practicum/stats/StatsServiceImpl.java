@@ -1,6 +1,7 @@
 package ru.practicum.stats;
 
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.util.ArrayUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -11,6 +12,7 @@ import ru.practicum.stats.model.EndpointHitMapper;
 import ru.practicum.stats.model.QEndpointHit;
 import ru.practicum.utils.Constants;
 
+import javax.validation.ValidationException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
@@ -33,20 +35,25 @@ public class StatsServiceImpl implements StatsService {
     public List<EndpointStats> getStats(String start, String end, String[] uris, boolean unique) {
         LocalDateTime from = decodeAndParseDate(start);
         LocalDateTime to = decodeAndParseDate(end);
-        BooleanExpression predicate = QEndpointHit.endpointHit.timeStamp.between(from, to);
+        checkSearchInterval(from, to);
+        BooleanExpression timestampBetweenPredicate = QEndpointHit.endpointHit.timeStamp.between(from, to);
+        Set<EndpointHit> endpointHits = new HashSet<>();
 
-        if (uris != null && uris.length != 0) {
-            predicate = predicate.and(QEndpointHit.endpointHit.uri.in(uris));
+        if (!ArrayUtils.isEmpty(uris)) {
+            for (String uri : uris) {
+                BooleanExpression uriStartsWithPredicate = QEndpointHit.endpointHit.uri.startsWith(uri);
+                statsStorage.findAll(timestampBetweenPredicate.and(uriStartsWithPredicate)).forEach(endpointHits::add);
+            }
+        } else {
+            statsStorage.findAll(timestampBetweenPredicate).forEach(endpointHits::add);
         }
 
-        Iterable<EndpointHit> allItems = statsStorage.findAll(predicate);
-
-        List<EndpointStats> stats = (unique) ? calcStatsWithoutRepeatings(allItems) : calcStatsWithRepeatings(allItems);
+        List<EndpointStats> stats = (unique) ? calcStatsWithoutRepeatings(endpointHits) : calcStatsWithRepeatings(endpointHits);
         log.info("Got statistics for {} endpoints", stats.size());
         return stats;
     }
 
-    private List<EndpointStats> calcStatsWithRepeatings(Iterable<EndpointHit> endpointHits) {
+    private List<EndpointStats> calcStatsWithRepeatings(Set<EndpointHit> endpointHits) {
         List<EndpointStats> endpointStatsList = new ArrayList<>();
         Map<EndpointStats, Integer> stats = new HashMap<>();
 
@@ -63,7 +70,7 @@ public class StatsServiceImpl implements StatsService {
         return sortByHits(endpointStatsList);
     }
 
-    private List<EndpointStats> calcStatsWithoutRepeatings(Iterable<EndpointHit> endpointHits) {
+    private List<EndpointStats> calcStatsWithoutRepeatings(Set<EndpointHit> endpointHits) {
         List<EndpointStats> endpointStatsList = new ArrayList<>();
         Map<EndpointStats, Set<String>> stats = new HashMap<>();
 
@@ -90,5 +97,13 @@ public class StatsServiceImpl implements StatsService {
     private LocalDateTime decodeAndParseDate(String date) {
         String decodedDate = URLDecoder.decode(date, StandardCharsets.UTF_8);
         return LocalDateTime.parse(decodedDate, Constants.FORMATTER);
+    }
+
+    private void checkSearchInterval(LocalDateTime start, LocalDateTime end) {
+        if (start.isAfter(end)) {
+            log.warn("Attempt to get statistics from {} to {}", start.format(Constants.FORMATTER),
+                    end.format(Constants.FORMATTER));
+            throw new ValidationException(Constants.START_SHOULD_BE_BEFORE_END_MESSAGE);
+        }
     }
 }

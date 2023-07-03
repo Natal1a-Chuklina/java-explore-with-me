@@ -44,10 +44,10 @@ public class StatsClient {
         }
     }
 
-    public List<EndpointStats> getStatistics(LocalDateTime start, LocalDateTime end, String[] uris, boolean unique) {
+    public List<EndpointStats> getStatistics(LocalDateTime start, LocalDateTime end, List<String> uris, boolean unique) {
         ResponseEntity<EndpointStats[]> responseEntity;
         try {
-            if (uris == null || uris.length == 0) {
+            if (uris == null || uris.isEmpty()) {
                 responseEntity = restTemplate.getForEntity(GET_STATS_PATH_WITHOUT_URIS, EndpointStats[].class,
                         parameters(start, end, uris, unique));
             } else {
@@ -69,14 +69,14 @@ public class StatsClient {
         return headers;
     }
 
-    private Map<String, Object> parameters(LocalDateTime start, LocalDateTime end, String[] uris, boolean unique) {
+    private Map<String, Object> parameters(LocalDateTime start, LocalDateTime end, List<String> uris, boolean unique) {
         Map<String, Object> parameters = new HashMap<>();
 
         parameters.put("start", URLEncoder.encode(start.format(FORMATTER), StandardCharsets.UTF_8));
         parameters.put("end", URLEncoder.encode(end.format(FORMATTER), StandardCharsets.UTF_8));
 
-        if (uris != null && uris.length != 0) {
-            parameters.put("uris", uris);
+        if (uris != null && !uris.isEmpty()) {
+            parameters.put("uris", uris.toArray());
         }
 
         parameters.put("unique", unique);

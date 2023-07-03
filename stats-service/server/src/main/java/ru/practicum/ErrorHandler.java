@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import ru.practicum.utils.ApiError;
 import ru.practicum.utils.Constants;
 
+import javax.validation.ValidationException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.Arrays;
@@ -31,7 +32,7 @@ public class ErrorHandler {
     @ExceptionHandler
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ApiError handleValidationException(MethodArgumentNotValidException e) {
-        log.warn("Validation exception: {}", e.getMessage());
+        log.warn("Method argument not valid exception: {}", e.getMessage());
         return new ApiError(mapStackTrace(e.getStackTrace()), HttpStatus.BAD_REQUEST,
                 Constants.INCORRECTLY_MADE_REQUEST_MESSAGE, e.getMessage(), LocalDateTime.now().format(Constants.FORMATTER));
     }
@@ -39,6 +40,14 @@ public class ErrorHandler {
     @ExceptionHandler
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ApiError handleMissingRequestValueException(MissingRequestValueException e) {
+        log.warn("Missing request value exception: {}", e.getMessage());
+        return new ApiError(mapStackTrace(e.getStackTrace()), HttpStatus.BAD_REQUEST,
+                Constants.INCORRECTLY_MADE_REQUEST_MESSAGE, e.getMessage(), LocalDateTime.now().format(Constants.FORMATTER));
+    }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiError handleValidationException(ValidationException e) {
         log.warn("Validation exception: {}", e.getMessage());
         return new ApiError(mapStackTrace(e.getStackTrace()), HttpStatus.BAD_REQUEST,
                 Constants.INCORRECTLY_MADE_REQUEST_MESSAGE, e.getMessage(), LocalDateTime.now().format(Constants.FORMATTER));

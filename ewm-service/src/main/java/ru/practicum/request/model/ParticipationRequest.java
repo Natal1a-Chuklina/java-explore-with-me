@@ -35,10 +35,15 @@ public class ParticipationRequest {
     @Enumerated(EnumType.STRING)
     private RequestStatus status;
 
-    public ParticipationRequest(User requester, Event event, LocalDateTime created, RequestStatus status) {
+    @Enumerated(EnumType.STRING)
+    private VisibilityType visibility;
+
+    public ParticipationRequest(User requester, Event event, LocalDateTime created, RequestStatus status,
+                                VisibilityType visibility) {
         this.requester = requester;
         this.event = event;
         this.created = created;
         this.status = status;
+        this.visibility = visibility;
     }
 }

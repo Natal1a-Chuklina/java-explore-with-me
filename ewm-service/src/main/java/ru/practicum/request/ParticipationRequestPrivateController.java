@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.request.dto.ParticipationRequestDto;
+import ru.practicum.request.model.VisibilityType;
 
 import javax.validation.constraints.Positive;
 import java.util.List;
@@ -17,13 +18,15 @@ import java.util.List;
 @Validated
 public class ParticipationRequestPrivateController {
     private final ParticipationRequestService requestService;
+    private static final String DEFAULT_VISIBILITY = "FOLLOWERS";
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ParticipationRequestDto createRequest(@PathVariable @Positive long userId,
-                                                 @RequestParam @Positive long eventId) {
+                                                 @RequestParam @Positive long eventId,
+                                                 @RequestParam(defaultValue = DEFAULT_VISIBILITY) VisibilityType visibility) {
         log.info("Creating participation request in event with id = {} by user with id {}", eventId, userId);
-        return requestService.createRequest(userId, eventId);
+        return requestService.createRequest(userId, eventId, visibility);
     }
 
     @GetMapping

@@ -10,6 +10,7 @@ import ru.practicum.user.model.UserMapper;
 import ru.practicum.utils.Constants;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -67,11 +68,11 @@ public class EventMapper {
         );
     }
 
-    public static List<EventShortDto> toEventShortDto(List<Event> events) {
+    public static List<EventShortDto> toEventShortDto(Collection<Event> events) {
         return events.stream().map(EventMapper::toEventShortDto).collect(Collectors.toList());
     }
 
-    public static List<EventFullDto> toEventFullDto(List<Event> events) {
+    public static List<EventFullDto> toEventFullDto(Collection<Event> events) {
         return events.stream().map(EventMapper::toEventFullDto).collect(Collectors.toList());
     }
 }

@@ -13,6 +13,7 @@ import ru.practicum.request.dto.ParticipationRequestDto;
 import ru.practicum.request.model.ParticipationRequest;
 import ru.practicum.request.model.ParticipationRequestMapper;
 import ru.practicum.request.model.RequestStatus;
+import ru.practicum.request.model.VisibilityType;
 import ru.practicum.user.UserStorage;
 import ru.practicum.user.model.User;
 import ru.practicum.utils.Constants;
@@ -32,7 +33,7 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
 
     @Override
     @Transactional(isolation = Isolation.REPEATABLE_READ)
-    public ParticipationRequestDto createRequest(long userId, long eventId) {
+    public ParticipationRequestDto createRequest(long userId, long eventId, VisibilityType visibility) {
         checkUserExistence(userId);
         Event event = getEvent(eventId);
         User user = userStorage.getReferenceById(userId);
@@ -46,7 +47,7 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
         checkEventStateAndDate(event, userId);
         checkEventAvailable(event);
         ParticipationRequest request = requestStorage.save(ParticipationRequestMapper.toRequest(user, event,
-                getRequestStatus(event)));
+                getRequestStatus(event), visibility));
 
         log.info("Created participation request with id = {}", request.getId());
         return ParticipationRequestMapper.toRequestDto(request);

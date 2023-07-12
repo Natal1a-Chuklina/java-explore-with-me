@@ -3,6 +3,8 @@ package ru.practicum.user;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.exception.DataModificationProhibitedException;
 import ru.practicum.user.dto.UserDto;
 import ru.practicum.user.model.*;
@@ -25,6 +27,7 @@ public class FriendshipServiceImpl implements FriendshipService {
     private final UserStorage userStorage;
 
     @Override
+    @Transactional(isolation = Isolation.REPEATABLE_READ)
     public void addFriend(long userId, long friendId) {
         Map<Long, Friendship> friendships = getFriendships(userId, friendId);
         List<Friendship> friendshipsToSave;
@@ -50,6 +53,7 @@ public class FriendshipServiceImpl implements FriendshipService {
     }
 
     @Override
+    @Transactional(isolation = Isolation.REPEATABLE_READ)
     public void deleteFriend(long userId, long friendId) {
         Map<Long, Friendship> friendships = getFriendships(userId, friendId);
 
@@ -69,6 +73,7 @@ public class FriendshipServiceImpl implements FriendshipService {
     }
 
     @Override
+    @Transactional(isolation = Isolation.REPEATABLE_READ)
     public void cancelFriendshipRequest(long userId, long friendId) {
         Map<Long, Friendship> friendships = getFriendships(userId, friendId);
 
@@ -84,6 +89,7 @@ public class FriendshipServiceImpl implements FriendshipService {
     }
 
     @Override
+    @Transactional(isolation = Isolation.REPEATABLE_READ)
     public void deleteFollower(long userId, long followerId) {
         Map<Long, Friendship> friendships = getFriendships(userId, followerId);
 

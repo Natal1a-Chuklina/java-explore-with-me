@@ -1,6 +1,7 @@
 package ru.practicum.event;
 
 import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.types.dsl.BooleanExpression;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -19,11 +20,12 @@ import ru.practicum.event.model.*;
 import ru.practicum.exception.DataModificationProhibitedException;
 import ru.practicum.request.ParticipationRequestStorage;
 import ru.practicum.request.dto.ParticipationRequestDto;
-import ru.practicum.request.model.ParticipationRequest;
-import ru.practicum.request.model.ParticipationRequestMapper;
-import ru.practicum.request.model.RequestStatus;
+import ru.practicum.request.model.*;
+import ru.practicum.user.FriendshipService;
+import ru.practicum.user.FriendshipStorage;
 import ru.practicum.user.UserStorage;
-import ru.practicum.user.model.User;
+import ru.practicum.user.dto.UserDto;
+import ru.practicum.user.model.*;
 import ru.practicum.utils.Constants;
 import ru.practicum.utils.Validator;
 
@@ -48,7 +50,9 @@ public class EventServiceImpl implements EventService {
     private final CategoryStorage categoryStorage;
     private final LocationStorage locationStorage;
     private final ParticipationRequestStorage requestStorage;
+    private final FriendshipStorage friendshipStorage;
     private final StatsClient statsClient;
+    private final FriendshipService friendshipService;
 
     @Override
     @Transactional(isolation = Isolation.REPEATABLE_READ)
@@ -222,6 +226,144 @@ public class EventServiceImpl implements EventService {
         return composeEventRequestStatusUpdateResult(eventId);
     }
 
+    @Override
+    public List<EventShortDto> getFriendEvents(PublicSearchParameters parameters, long userId, long friendId, int from,
+                                               int size) {
+        UserRelation relation = getUserRelations(userId, friendId);
+        Validator.validateStartAndEndDates(parameters.getRangeStart(), parameters.getRangeEnd());
+        Sort sortById = Sort.by(Sort.Direction.ASC, "id");
+        Pageable page = PageRequest.of(from / size, size, sortById);
+        BooleanBuilder builder = new BooleanBuilder();
+        builder.and(QParticipationRequest.participationRequest.requester.id.in(friendId));
+
+        if (relation.equals(UserRelation.FRIEND)) {
+            builder.and(QParticipationRequest.participationRequest.visibility.notIn(VisibilityType.NONE));
+        } else {
+            builder.and(QParticipationRequest.participationRequest.visibility.in(VisibilityType.FOLLOWERS));
+        }
+
+        composeRequestSearchPredicate(builder, parameters);
+        List<ParticipationRequest> requests = requestStorage.findAll(builder.getValue(), page).getContent();
+        List<Event> events = requests.stream().map(ParticipationRequest::getEvent).collect(Collectors.toList());
+        List<EventShortDto> eventDtos = EventMapper.toEventShortDto(events);
+        fillEventDtoList(eventDtos, getEarliestPublishDate(events));
+
+        if (parameters.isOnlyAvailable()) {
+            filterNotAvailableEvents(events, eventDtos);
+        }
+
+        log.info("Received {} events in which user with id = {} participates", eventDtos.size(), friendId);
+        if (parameters.getSort() == null) {
+            return eventDtos;
+        } else {
+            return sortEvents(eventDtos, convertStringToSortType(parameters.getSort()));
+        }
+    }
+
+    @Override
+    public List<EventShortDto> getFriendEvents(PublicSearchParameters parameters, long userId, int from, int size,
+                                               boolean onlyFriends) {
+        Validator.validateStartAndEndDates(parameters.getRangeStart(), parameters.getRangeEnd());
+        List<Long> friendIds = friendshipService.getFriends(userId).stream().map(UserDto::getId)
+                .collect(Collectors.toList());
+        List<Long> followingIds = (onlyFriends) ? Collections.emptyList() : friendshipService
+                .getFollowers(userId, FollowerType.FOLLOWING).stream().map(UserDto::getId).collect(Collectors.toList());
+
+        if (friendIds.isEmpty() && onlyFriends) {
+            log.warn("Attempt to get friend events by user who has no friends");
+            throw new EntityNotFoundException(Constants.FRIENDS_NOT_FOUND);
+        } else if (friendIds.isEmpty() && followingIds.isEmpty()) {
+            log.warn("Attempt to get following events by user who has no friends or followings");
+            throw new EntityNotFoundException(Constants.FRIENDS_OR_FOLLOWINGS_NOT_FOUND);
+        }
+
+        Sort sortById = Sort.by(Sort.Direction.ASC, "id");
+        Pageable page = PageRequest.of(from / size, size, sortById);
+        BooleanBuilder builder = new BooleanBuilder();
+
+        if (!friendIds.isEmpty() && !followingIds.isEmpty()) {
+            BooleanExpression friendsRequests = QParticipationRequest.participationRequest.requester.id.in(friendIds)
+                    .and(QParticipationRequest.participationRequest.visibility.notIn(VisibilityType.NONE));
+            BooleanExpression followingRequests = QParticipationRequest.participationRequest.requester.id.in(followingIds)
+                    .and(QParticipationRequest.participationRequest.visibility.in(VisibilityType.FOLLOWERS));
+            builder.and(friendsRequests.or(followingRequests));
+        } else if (!friendIds.isEmpty()) {
+            builder.and(QParticipationRequest.participationRequest.requester.id.in(friendIds)
+                    .and(QParticipationRequest.participationRequest.visibility.notIn(VisibilityType.NONE)));
+        } else {
+            builder.and(QParticipationRequest.participationRequest.requester.id.in(followingIds)
+                    .and(QParticipationRequest.participationRequest.visibility.in(VisibilityType.FOLLOWERS)));
+        }
+
+        composeRequestSearchPredicate(builder, parameters);
+        List<ParticipationRequest> requests = requestStorage.findAll(builder.getValue(), page).getContent();
+        Set<Event> events = requests.stream().map(ParticipationRequest::getEvent).collect(Collectors.toSet());
+        List<EventShortDto> eventDtos = EventMapper.toEventShortDto(events);
+        fillEventDtoList(eventDtos, getEarliestPublishDate(events));
+
+        if (parameters.isOnlyAvailable()) {
+            filterNotAvailableEvents(events, eventDtos);
+        }
+
+        log.info("Received {} events in which friends or followings of user with id = {} participate", eventDtos.size(),
+                userId);
+        if (parameters.getSort() == null) {
+            return eventDtos;
+        } else {
+            return sortEvents(eventDtos, convertStringToSortType(parameters.getSort()));
+        }
+    }
+
+    private void composeRequestSearchPredicate(BooleanBuilder builder, PublicSearchParameters parameters) {
+        builder.and(QParticipationRequest.participationRequest.status.in(RequestStatus.CONFIRMED));
+
+        if (!isBlank(parameters.getText())) {
+            builder.and(QParticipationRequest.participationRequest.event.annotation.containsIgnoreCase(parameters.getText())
+                    .or(QParticipationRequest.participationRequest.event.description.containsIgnoreCase(parameters.getText())));
+        }
+
+        if (!isEmpty(parameters.getCategories())) {
+            builder.and(QParticipationRequest.participationRequest.event.category.id.in(parameters.getCategories()));
+        }
+
+        if (parameters.getPaid() != null) {
+            builder.and(QParticipationRequest.participationRequest.event.paid.eq(parameters.getPaid()));
+        }
+
+        if (isBlank(parameters.getRangeStart()) && isBlank(parameters.getRangeEnd())) {
+            builder.and(QParticipationRequest.participationRequest.event.eventDate.after(LocalDateTime.now()));
+        }
+
+        if (!isBlank(parameters.getRangeStart())) {
+            builder.and(QParticipationRequest.participationRequest.event.eventDate
+                    .after(decodeAndConvertToLocalDateTime(parameters.getRangeStart())));
+        }
+
+        if (!isBlank(parameters.getRangeEnd())) {
+            builder.and(QParticipationRequest.participationRequest.event.eventDate
+                    .before(decodeAndConvertToLocalDateTime(parameters.getRangeEnd())));
+        }
+    }
+
+    private UserRelation getUserRelations(long userId, long friendId) {
+        List<Long> ids = List.of(userId, friendId);
+        Map<Long, Friendship> friendships = friendshipStorage.findByUser_IdInAndFriend_IdIn(ids, ids).stream()
+                .collect(Collectors.toMap(friendship -> friendship.getUser().getId(), Function.identity()));
+
+        if (friendships.isEmpty() || !friendships.get(userId).getStatus().equals(FriendshipStatus.CONFIRMED)) {
+            log.warn("Attempt to get events in which user with id = {} participates by user who doesn't friend or " +
+                    "follower", friendId);
+            throw new EntityNotFoundException(String.format(Constants.NOT_FRIEND_OR_FOLLOWER_MESSAGE, friendId));
+        }
+
+        if (friendships.get(userId).getStatus().equals(FriendshipStatus.CONFIRMED) &&
+                friendships.get(friendId).getStatus().equals(FriendshipStatus.CONFIRMED)) {
+            return UserRelation.FRIEND;
+        } else {
+            return UserRelation.FOLLOWER;
+        }
+    }
+
     private boolean needToRejectConfirmedRequests(int confirmedRequests, int eventParticipantLimit,
                                                   EventRequestStatusUpdateRequest updateRequest, long eventId) {
         boolean needToRejectNotConfirmedRequests = false;
@@ -307,17 +449,11 @@ public class EventServiceImpl implements EventService {
                 ParticipationRequestMapper.toRequestDto(rejected));
     }
 
-    private void filterNotAvailableEvents(List<Event> events, List<EventShortDto> eventShortDtos) {
-        List<EventShortDto> eventsToRemove = new ArrayList<>();
-
-        for (int i = 0; i < events.size(); i++) {
-            Event event = events.get(i);
-            EventShortDto eventDto = eventShortDtos.get(i);
-
-            if (event.getParticipantLimit() != 0 && event.getParticipantLimit() <= eventDto.getConfirmedRequests()) {
-                eventsToRemove.add(eventDto);
-            }
-        }
+    private void filterNotAvailableEvents(Collection<Event> events, List<EventShortDto> eventShortDtos) {
+        Map<Long, Event> eventMap = events.stream().collect(Collectors.toMap(Event::getId, Function.identity()));
+        List<EventShortDto> eventsToRemove = eventShortDtos.stream().filter(eventShortDto ->
+                        eventShortDto.getConfirmedRequests() >= eventMap.get(eventShortDto.getId()).getParticipantLimit())
+                .collect(Collectors.toList());
 
         log.info("Removed {} not available events", eventsToRemove.size());
         eventShortDtos.removeAll(eventsToRemove);
@@ -421,7 +557,7 @@ public class EventServiceImpl implements EventService {
         }
     }
 
-    private Optional<LocalDateTime> getEarliestPublishDate(List<Event> events) {
+    private Optional<LocalDateTime> getEarliestPublishDate(Collection<Event> events) {
         return events.stream()
                 .filter(event -> event.getState().equals(EventState.PUBLISHED))
                 .map(Event::getPublishedOn)
@@ -538,7 +674,7 @@ public class EventServiceImpl implements EventService {
         int views = 0;
 
         for (EndpointStats statistics : stats) {
-            if (statistics.getApp().equals(Constants.APP_NAME)) {
+            if (statistics.getApp().equals(Constants.APP_NAME) && statistics.getUri().equals(uris.get(0))) {
                 views = statistics.getHits();
                 break;
             }

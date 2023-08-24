@@ -19,16 +19,19 @@ public class ParticipationRequestMapper {
                 participationRequest.getCreated().format(Constants.FORMATTER),
                 participationRequest.getEvent().getId(),
                 participationRequest.getRequester().getId(),
-                participationRequest.getStatus()
+                participationRequest.getStatus(),
+                participationRequest.getVisibility()
         );
     }
 
-    public static ParticipationRequest toRequest(User requester, Event event, RequestStatus status) {
+    public static ParticipationRequest toRequest(User requester, Event event, RequestStatus status,
+                                                 VisibilityType visibility) {
         return new ParticipationRequest(
                 requester,
                 event,
                 LocalDateTime.now(),
-                status);
+                status,
+                visibility);
     }
 
     public static List<ParticipationRequestDto> toRequestDto(List<ParticipationRequest> requests) {

@@ -1,5 +1,6 @@
 package ru.practicum.stats;
 
+import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.util.ArrayUtils;
 import lombok.RequiredArgsConstructor;
@@ -36,24 +37,29 @@ public class StatsServiceImpl implements StatsService {
         LocalDateTime from = decodeAndParseDate(start);
         LocalDateTime to = decodeAndParseDate(end);
         checkSearchInterval(from, to);
-        BooleanExpression timestampBetweenPredicate = QEndpointHit.endpointHit.timeStamp.between(from, to);
-        Set<EndpointHit> endpointHits = new HashSet<>();
+        BooleanExpression predicate = QEndpointHit.endpointHit.timeStamp.between(from, to);
 
         if (!ArrayUtils.isEmpty(uris)) {
-            for (String uri : uris) {
-                BooleanExpression uriStartsWithPredicate = QEndpointHit.endpointHit.uri.startsWith(uri);
-                statsStorage.findAll(timestampBetweenPredicate.and(uriStartsWithPredicate)).forEach(endpointHits::add);
+            BooleanBuilder builder = new BooleanBuilder();
+            builder.and(QEndpointHit.endpointHit.uri.startsWithIgnoreCase(uris[0]));
+
+            if (uris.length > 1) {
+                for (int i = 1; i < uris.length; i++) {
+                    builder.or(QEndpointHit.endpointHit.uri.startsWithIgnoreCase(uris[i]));
+                }
             }
-        } else {
-            statsStorage.findAll(timestampBetweenPredicate).forEach(endpointHits::add);
+
+            predicate = predicate.and(builder.getValue());
         }
+
+        Iterable<EndpointHit> endpointHits = statsStorage.findAll(predicate);
 
         List<EndpointStats> stats = (unique) ? calcStatsWithoutRepeatings(endpointHits) : calcStatsWithRepeatings(endpointHits);
         log.info("Got statistics for {} endpoints", stats.size());
         return stats;
     }
 
-    private List<EndpointStats> calcStatsWithRepeatings(Set<EndpointHit> endpointHits) {
+    private List<EndpointStats> calcStatsWithRepeatings(Iterable<EndpointHit> endpointHits) {
         List<EndpointStats> endpointStatsList = new ArrayList<>();
         Map<EndpointStats, Integer> stats = new HashMap<>();
 
@@ -70,7 +76,7 @@ public class StatsServiceImpl implements StatsService {
         return sortByHits(endpointStatsList);
     }
 
-    private List<EndpointStats> calcStatsWithoutRepeatings(Set<EndpointHit> endpointHits) {
+    private List<EndpointStats> calcStatsWithoutRepeatings(Iterable<EndpointHit> endpointHits) {
         List<EndpointStats> endpointStatsList = new ArrayList<>();
         Map<EndpointStats, Set<String>> stats = new HashMap<>();
 

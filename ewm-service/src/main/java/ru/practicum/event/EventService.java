@@ -26,4 +26,8 @@ public interface EventService {
     List<ParticipationRequestDto> getEventRequests(long userId, long eventId);
 
     EventRequestStatusUpdateResult updateRequestStatus(long userId, long eventId, EventRequestStatusUpdateRequest updateRequest);
+
+    List<EventShortDto> getFriendEvents(PublicSearchParameters parameters, long userId, long friendId, int from, int size);
+
+    List<EventShortDto> getFriendEvents(PublicSearchParameters parameters, long userId, int from, int size, boolean onlyFriends);
 }

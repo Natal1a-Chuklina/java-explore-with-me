@@ -7,8 +7,5 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class ExploreWithMeService {
     public static void main(String[] args) {
         SpringApplication.run(ExploreWithMeService.class, args);
-
-        /* Тесты написаны не ко всему функционалу, если будет время, то после реализации дополнительного функционала
-        я допишу тесты основного сервиса. */
     }
 }

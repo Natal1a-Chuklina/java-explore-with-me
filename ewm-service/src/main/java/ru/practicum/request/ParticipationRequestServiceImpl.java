@@ -72,10 +72,6 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
         return ParticipationRequestMapper.toRequestDto(request);
     }
 
-
-    /* Тут может возникнуть вопрос, почему при отсутствии ограничения на количество участников события, проставляется
-    статус CONFIRMED заявке на участие, даже если event.isRequestModeration() = true. Причина в тестах, которые ожидают
-    такое поведение программы, хотя оно, как по мне, крайне нелогичное. */
     private RequestStatus getRequestStatus(Event event) {
         if (!event.isRequestModeration() || event.getParticipantLimit() == 0) {
             return RequestStatus.CONFIRMED;

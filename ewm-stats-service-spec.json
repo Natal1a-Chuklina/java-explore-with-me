@@ -12,7 +12,7 @@
   ],
   "tags": [
     {
-      "name": "StatsController",
+      "name": "Stats",
       "description": "API для работы со статистикой посещений"
     }
   ],
@@ -20,17 +20,16 @@
     "/hit": {
       "post": {
         "tags": [
-          "StatsController"
+          "Stats"
         ],
-        "summary": "Сохранение информации о том, что к эндпоинту был запрос",
-        "description": "Сохранение информации о том, что на uri конкретного сервиса был отправлен запрос пользователем. Название сервиса, uri и ip пользователя указаны в теле запроса.",
+        "summary": "Сохранение информации о том, что к эндпоинту был запрос.",
         "operationId": "hit",
         "requestBody": {
           "description": "данные запроса",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/EndpointHit"
+                "$ref": "#/components/schemas/InputEndpointHit"
               }
             }
           },
@@ -39,6 +38,22 @@
         "responses": {
           "201": {
             "description": "Информация сохранена"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "BAD_REQUEST",
+                  "reason": "Incorrectly made request.",
+                  "message": "Validation failed for argument [0] in public void ru.practicum.stats.StatsController.saveEndpointRequest(ru.practicum.InputEndpointHit): [Field error in object 'inputEndpointHit' on field 'ip': rejected value [ ]; codes [NotBlank.inputEndpointHit.ip,NotBlank.ip,NotBlank.java.lang.String,NotBlank]; arguments [org.springframework.context.support.DefaultMessageSourceResolvable: codes [inputEndpointHit.ip,ip]; arguments []; default message [ip]]; default message [must not be blank]]",
+                  "timestamp": "2024-02-08 17:06:25"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Запрос составлен некорректно"
           }
         }
       }
@@ -46,15 +61,15 @@
     "/stats": {
       "get": {
         "tags": [
-          "StatsController"
+          "Stats"
         ],
-        "summary": "Получение статистики по посещениям. Обратите внимание: значение даты и времени нужно закодировать (например используя java.net.URLEncoder.encode) ",
+        "summary": "Получение статистики по посещениям.",
         "operationId": "getStats",
         "parameters": [
           {
             "name": "start",
             "in": "query",
-            "description": "Дата и время начала диапазона за который нужно выгрузить статистику (в формате \"yyyy-MM-dd HH:mm:ss\")",
+            "description": "Дата и время начала диапазона, за который нужно выгрузить статистику, в формате \"yyyy-MM-dd HH:mm:ss\"",
             "required": true,
             "schema": {
               "type": "string"
@@ -63,7 +78,7 @@
           {
             "name": "end",
             "in": "query",
-            "description": "Дата и время конца диапазона за который нужно выгрузить статистику (в формате \"yyyy-MM-dd HH:mm:ss\")",
+            "description": "Дата и время конца диапазона, за который нужно выгрузить статистику, в формате \"yyyy-MM-dd HH:mm:ss\"",
             "required": true,
             "schema": {
               "type": "string"
@@ -84,7 +99,7 @@
           {
             "name": "unique",
             "in": "query",
-            "description": "Нужно ли учитывать только уникальные посещения (только с уникальным ip)",
+            "description": "Нужно ли учитывать только посещения с уникальным ip",
             "required": false,
             "schema": {
               "type": "boolean",
@@ -100,11 +115,27 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/ViewStats"
+                    "$ref": "#/components/schemas/EndpointStats"
                   }
                 }
               }
             }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "BAD_REQUEST",
+                  "reason": "Incorrectly made request.",
+                  "message": "Required request parameter 'start' for method parameter type String is not present",
+                  "timestamp": "2024-02-08 17:08:24"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Запрос составлен некорректно"
           }
         }
       }
@@ -112,24 +143,113 @@
   },
   "components": {
     "schemas": {
-      "EndpointHit": {
+      "ApiError": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "integer",
-            "description": "Идентификатор записи",
-            "format": "int64",
-            "readOnly": true,
-            "example": 1
+          "status": {
+            "type": "string",
+            "description": "Код статуса HTTP-ответа",
+            "example": "FORBIDDEN",
+            "enum": [
+              "100 CONTINUE",
+              "101 SWITCHING_PROTOCOLS",
+              "102 PROCESSING",
+              "103 CHECKPOINT",
+              "200 OK",
+              "201 CREATED",
+              "202 ACCEPTED",
+              "203 NON_AUTHORITATIVE_INFORMATION",
+              "204 NO_CONTENT",
+              "205 RESET_CONTENT",
+              "206 PARTIAL_CONTENT",
+              "207 MULTI_STATUS",
+              "208 ALREADY_REPORTED",
+              "226 IM_USED",
+              "300 MULTIPLE_CHOICES",
+              "301 MOVED_PERMANENTLY",
+              "302 FOUND",
+              "302 MOVED_TEMPORARILY",
+              "303 SEE_OTHER",
+              "304 NOT_MODIFIED",
+              "305 USE_PROXY",
+              "307 TEMPORARY_REDIRECT",
+              "308 PERMANENT_REDIRECT",
+              "400 BAD_REQUEST",
+              "401 UNAUTHORIZED",
+              "402 PAYMENT_REQUIRED",
+              "403 FORBIDDEN",
+              "404 NOT_FOUND",
+              "405 METHOD_NOT_ALLOWED",
+              "406 NOT_ACCEPTABLE",
+              "407 PROXY_AUTHENTICATION_REQUIRED",
+              "408 REQUEST_TIMEOUT",
+              "409 CONFLICT",
+              "410 GONE",
+              "411 LENGTH_REQUIRED",
+              "412 PRECONDITION_FAILED",
+              "413 PAYLOAD_TOO_LARGE",
+              "413 REQUEST_ENTITY_TOO_LARGE",
+              "414 URI_TOO_LONG",
+              "414 REQUEST_URI_TOO_LONG",
+              "415 UNSUPPORTED_MEDIA_TYPE",
+              "416 REQUESTED_RANGE_NOT_SATISFIABLE",
+              "417 EXPECTATION_FAILED",
+              "418 I_AM_A_TEAPOT",
+              "419 INSUFFICIENT_SPACE_ON_RESOURCE",
+              "420 METHOD_FAILURE",
+              "421 DESTINATION_LOCKED",
+              "422 UNPROCESSABLE_ENTITY",
+              "423 LOCKED",
+              "424 FAILED_DEPENDENCY",
+              "425 TOO_EARLY",
+              "426 UPGRADE_REQUIRED",
+              "428 PRECONDITION_REQUIRED",
+              "429 TOO_MANY_REQUESTS",
+              "431 REQUEST_HEADER_FIELDS_TOO_LARGE",
+              "451 UNAVAILABLE_FOR_LEGAL_REASONS",
+              "500 INTERNAL_SERVER_ERROR",
+              "501 NOT_IMPLEMENTED",
+              "502 BAD_GATEWAY",
+              "503 SERVICE_UNAVAILABLE",
+              "504 GATEWAY_TIMEOUT",
+              "505 HTTP_VERSION_NOT_SUPPORTED",
+              "506 VARIANT_ALSO_NEGOTIATES",
+              "507 INSUFFICIENT_STORAGE",
+              "508 LOOP_DETECTED",
+              "509 BANDWIDTH_LIMIT_EXCEEDED",
+              "510 NOT_EXTENDED",
+              "511 NETWORK_AUTHENTICATION_REQUIRED"
+            ]
           },
+          "reason": {
+            "type": "string",
+            "description": "Общее описание причины ошибки",
+            "example": "For the requested operation the conditions are not met."
+          },
+          "message": {
+            "type": "string",
+            "description": "Сообщение об ошибке",
+            "example": "Only pending or canceled events can be changed"
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "Дата и время ошибки в формате \"yyyy-MM-dd HH:mm:ss\"",
+            "example": "2024-02-08 17:06:25"
+          }
+        },
+        "description": "Сведения об ошибке"
+      },
+      "InputEndpointHit": {
+        "type": "object",
+        "properties": {
           "app": {
             "type": "string",
-            "description": "Идентификатор сервиса для которого записывается информация",
+            "description": "Идентификатор сервиса, для которого записывается информация",
             "example": "ewm-main-service"
           },
           "uri": {
             "type": "string",
-            "description": "URI для которого был осуществлен запрос",
+            "description": "URI, для которого был осуществлен запрос",
             "example": "/events/1"
           },
           "ip": {
@@ -139,12 +259,12 @@
           },
           "timestamp": {
             "type": "string",
-            "description": "Дата и время, когда был совершен запрос к эндпоинту (в формате \"yyyy-MM-dd HH:mm:ss\")",
-            "example": "2022-09-06 11:00:23"
+            "description": "Дата и время, когда был совершен запрос к эндпоинту, в формате \"yyyy-MM-dd HH:mm:ss\"",
+            "example": "2024-02-08 17:06:25"
           }
         }
       },
-      "ViewStats": {
+      "EndpointStats": {
         "type": "object",
         "properties": {
           "app": {

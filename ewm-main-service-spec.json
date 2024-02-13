@@ -17,36 +17,40 @@
       "name": "Public: Подборки событий"
     },
     {
-      "description": "API для работы с категориями",
-      "name": "Admin: Категории"
-    },
-    {
-      "description": "Закрытый API для работы с событиями",
-      "name": "Private: События"
+      "description": "API для админов для работы с подборками событий",
+      "name": "Admin: Подборки событий"
     },
     {
       "description": "Публичный API для работы с категориями",
       "name": "Public: Категории"
     },
     {
-      "description": "API для работы с событиями",
-      "name": "Admin: События"
+      "description": "API для админов для работы с категориями",
+      "name": "Admin: Категории"
     },
     {
       "description": "Публичный API для работы с событиями",
       "name": "Public: События"
     },
     {
-      "description": "Закрытый API для работы с запросами текущего пользователя на участие в событиях",
+      "description": "API для авторизованных пользователей для работы с событиями",
+      "name": "Private: События"
+    },
+    {
+      "description": "API для админов для работы с событиями",
+      "name": "Admin: События"
+    },
+    {
+      "description": "API для авторизованных пользователей для работы с запросами на участие в событиях",
       "name": "Private: Запросы на участие"
     },
     {
-      "description": "API для работы с пользователями",
+      "description": "API для админов для работы с пользователями",
       "name": "Admin: Пользователи"
     },
     {
-      "description": "API для работы с подборками событий",
-      "name": "Admin: Подборки событий"
+      "description": "API для авторизованных пользователей для работы с дружбой и подписками",
+      "name": "Private: Дружба и подписки"
     }
   ],
   "paths": {
@@ -62,7 +66,6 @@
               }
             }
           },
-          "description": "данные добавляемой категории",
           "required": true
         },
         "responses": {
@@ -82,8 +85,8 @@
                 "example": {
                   "status": "BAD_REQUEST",
                   "reason": "Incorrectly made request.",
-                  "message": "Field: name. Error: must not be blank. Value: null",
-                  "timestamp": "2022-09-07 09:10:50"
+                  "message": "Validation failed for argument [0] in public ru.practicum.category.dto.CategoryDto ru.practicum.category.controller.CategoryAdminController.createCategory(ru.practicum.category.dto.NewCategoryDto): [Field error in object 'newCategoryDto' on field 'name': rejected value [null]; codes [NotBlank.newCategoryDto.name,NotBlank.name,NotBlank.java.lang.String,NotBlank]; arguments [org.springframework.context.support.DefaultMessageSourceResolvable: codes [newCategoryDto.name,name]; arguments []; default message [name]]; default message [must not be blank]]",
+                  "timestamp": "2024-02-08 18:54:46"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/ApiError"
@@ -99,14 +102,14 @@
                   "status": "CONFLICT",
                   "reason": "Integrity constraint has been violated.",
                   "message": "could not execute statement; SQL [n/a]; constraint [uq_category_name]; nested exception is org.hibernate.exception.ConstraintViolationException: could not execute statement",
-                  "timestamp": "2022-09-07 09:10:50"
+                  "timestamp": "2024-02-08 18:53:16"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/ApiError"
                 }
               }
             },
-            "description": "Нарушение целостности данных"
+            "description": "Создание категории с уже существующим названием"
           }
         },
         "summary": "Добавление новой категории",
@@ -117,7 +120,7 @@
     },
     "/admin/categories/{catId}": {
       "delete": {
-        "description": "Обратите внимание: с категорией не должно быть связано ни одного события.",
+        "description": "Обратите внимание: с категорией не должно быть связано ни одно событие",
         "operationId": "deleteCategory",
         "parameters": [
           {
@@ -127,6 +130,7 @@
             "required": true,
             "schema": {
               "type": "integer",
+              "minimum": 1,
               "format": "int64"
             }
           }
@@ -135,37 +139,53 @@
           "204": {
             "description": "Категория удалена"
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "BAD_REQUEST",
+                  "reason": "Incorrectly made request.",
+                  "message": "deleteCategory.catId: must be greater than 0",
+                  "timestamp": "2024-02-08 18:54:46"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Запрос составлен некорректно"
+          },
           "404": {
             "content": {
               "application/json": {
                 "example": {
                   "status": "NOT_FOUND",
                   "reason": "The required object was not found.",
-                  "message": "Category with id=27 was not found",
-                  "timestamp": "2022-09-07 09:10:50"
+                  "message": "Category with id=2 was not found.",
+                  "timestamp": "2024-02-08 19:46:41"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/ApiError"
                 }
               }
             },
-            "description": "Категория не найдена или недоступна"
+            "description": "Категория не найдена"
           },
           "409": {
             "content": {
               "application/json": {
                 "example": {
                   "status": "CONFLICT",
-                  "reason": "For the requested operation the conditions are not met.",
-                  "message": "The category is not empty",
-                  "timestamp": "2023-01-21 16:56:19"
+                  "reason": "Integrity constraint has been violated.",
+                  "message": "could not execute statement; SQL [n/a]; constraint [fk_event_category]; nested exception is org.hibernate.exception.ConstraintViolationException: could not execute statement",
+                  "timestamp": "2024-02-08 19:51:33"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/ApiError"
                 }
               }
             },
-            "description": "Существуют события, связанные с категорией"
+            "description": "Удаление категории со связанными событиями"
           }
         },
         "summary": "Удаление категории",
@@ -184,6 +204,7 @@
             "required": true,
             "schema": {
               "type": "integer",
+              "minimum": 1,
               "format": "int64"
             }
           }
@@ -192,11 +213,10 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CategoryDto"
+                "$ref": "#/components/schemas/NewCategoryDto"
               }
             }
           },
-          "description": "Данные категории для изменения",
           "required": true
         },
         "responses": {
@@ -210,21 +230,37 @@
             },
             "description": "Данные категории изменены"
           },
-          "404": {
+          "400": {
             "content": {
               "application/json": {
                 "example": {
-                  "status": "NOT_FOUND",
-                  "reason": "The required object was not found.",
-                  "message": "Category with id=27 was not found",
-                  "timestamp": "2022-09-07 09:10:50"
+                  "status": "BAD_REQUEST",
+                  "reason": "Incorrectly made request.",
+                  "message": "Validation failed for argument [0] in public ru.practicum.category.dto.CategoryDto ru.practicum.category.controller.CategoryAdminController.updateCategory(ru.practicum.category.dto.NewCategoryDto,long): [Field error in object 'newCategoryDto' on field 'name': rejected value [  ]; codes [NotBlank.newCategoryDto.name,NotBlank.name,NotBlank.java.lang.String,NotBlank]; arguments [org.springframework.context.support.DefaultMessageSourceResolvable: codes [newCategoryDto.name,name]; arguments []; default message [name]]; default message [must not be blank]]",
+                  "timestamp": "2024-02-08 20:10:34"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/ApiError"
                 }
               }
             },
-            "description": "Категория не найдена или недоступна"
+            "description": "Запрос составлен некорректно"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "NOT_FOUND",
+                  "reason": "The required object was not found.",
+                  "message": "Category with id=1 was not found.",
+                  "timestamp": "2024-02-08 20:08:22"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Категория не найдена"
           },
           "409": {
             "content": {
@@ -233,14 +269,14 @@
                   "status": "CONFLICT",
                   "reason": "Integrity constraint has been violated.",
                   "message": "could not execute statement; SQL [n/a]; constraint [uq_category_name]; nested exception is org.hibernate.exception.ConstraintViolationException: could not execute statement",
-                  "timestamp": "2022-09-07 09:10:50"
+                  "timestamp": "2024-02-08 20:09:40"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/ApiError"
                 }
               }
             },
-            "description": "Нарушение целостности данных"
+            "description": "Изменение имени категории на уже существующее"
           }
         },
         "summary": "Изменение категории",
@@ -251,6 +287,7 @@
     },
     "/admin/compilations": {
       "post": {
+        "description": "Обратите внимание: \n - подборка может не содержать событий\n - заголовок подборки должен быть уникальным",
         "operationId": "saveCompilation",
         "requestBody": {
           "content": {
@@ -260,7 +297,6 @@
               }
             }
           },
-          "description": "данные новой подборки",
           "required": true
         },
         "responses": {
@@ -280,8 +316,8 @@
                 "example": {
                   "status": "BAD_REQUEST",
                   "reason": "Incorrectly made request.",
-                  "message": "Field: title. Error: must not be blank. Value: null",
-                  "timestamp": "2022-09-07 09:10:50"
+                  "message": "Validation failed for argument [0] in public ru.practicum.compilation.dto.CompilationDto ru.practicum.compilation.controller.CompilationAdminController.createCompilation(ru.practicum.compilation.dto.NewCompilationDto): [Field error in object 'newCompilationDto' on field 'title': rejected value [ ]; codes [NotBlank.newCompilationDto.title,NotBlank.title,NotBlank.java.lang.String,NotBlank]; arguments [org.springframework.context.support.DefaultMessageSourceResolvable: codes [newCompilationDto.title,title]; arguments []; default message [title]]; default message [must not be blank]]  ",
+                  "timestamp": "2024-02-10 12:48:54"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/ApiError"
@@ -290,24 +326,40 @@
             },
             "description": "Запрос составлен некорректно"
           },
-          "409": {
+          "404": {
             "content": {
               "application/json": {
                 "example": {
-                  "status": "CONFLICT",
-                  "reason": "Integrity constraint has been violated.",
-                  "message": "could not execute statement; SQL [n/a]; constraint [uq_compilation_name]; nested exception is org.hibernate.exception.ConstraintViolationException: could not execute statement",
-                  "timestamp": "2022-09-07 09:10:50"
+                  "status": "NOT_FOUND",
+                  "reason": "The required object was not found.",
+                  "message": "Not all events were found.",
+                  "timestamp": "2024-02-10 12:53:12"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/ApiError"
                 }
               }
             },
-            "description": "Нарушение целостности данных"
+            "description": "Событие из списка событий не найдено"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "CONFLICT",
+                  "reason": "Integrity constraint has been violated.",
+                  "message": "could not execute statement; SQL [n/a]; constraint [uq_compilation_title]; nested exception is org.hibernate.exception.ConstraintViolationException: could not execute statement",
+                  "timestamp": "2024-02-10 12:50:34"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Создание подборки с уже существующим названием"
           }
         },
-        "summary": "Добавление новой подборки (подборка может не содержать событий)",
+        "summary": "Добавление новой подборки",
         "tags": [
           "Admin: Подборки событий"
         ]
@@ -324,6 +376,7 @@
             "required": true,
             "schema": {
               "type": "integer",
+              "minimum": 1,
               "format": "int64"
             }
           }
@@ -332,21 +385,37 @@
           "204": {
             "description": "Подборка удалена"
           },
-          "404": {
+          "400": {
             "content": {
               "application/json": {
                 "example": {
-                  "status": "NOT_FOUND",
-                  "reason": "The required object was not found.",
-                  "message": "Compilation with id=11 was not found",
-                  "timestamp": "2022-09-07 09:10:50"
+                  "status": "BAD_REQUEST",
+                  "reason": "Incorrectly made request.",
+                  "message": "deleteCompilation.compId: must be greater than 0",
+                  "timestamp": "2024-02-11 16:11:42"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/ApiError"
                 }
               }
             },
-            "description": "Подборка не найдена или недоступна"
+            "description": "Запрос составлен некорректно"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "NOT_FOUND",
+                  "reason": "The required object was not found.",
+                  "message": "Compilation with id=1 was not found",
+                  "timestamp": "2024-02-11 16:09:50"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Подборка не найдена"
           }
         },
         "summary": "Удаление подборки",
@@ -355,6 +424,7 @@
         ]
       },
       "patch": {
+        "description": "Обратите внимание:\n- если поле в запросе не указано, равно null или пустое, то изменение этих данных не будет выполнено \n - заголовок подборки должен быть уникальным",
         "operationId": "updateCompilation",
         "parameters": [
           {
@@ -364,6 +434,7 @@
             "required": true,
             "schema": {
               "type": "integer",
+              "minimum": 1,
               "format": "int64"
             }
           }
@@ -376,7 +447,6 @@
               }
             }
           },
-          "description": "данные для обновления подборки",
           "required": true
         },
         "responses": {
@@ -390,24 +460,56 @@
             },
             "description": "Подборка обновлена"
           },
-          "404": {
+          "400": {
             "content": {
               "application/json": {
                 "example": {
-                  "status": "NOT_FOUND",
-                  "reason": "The required object was not found.",
-                  "message": "Category with id=27 was not found",
-                  "timestamp": "2022-09-07 09:10:50"
+                  "status": "BAD_REQUEST",
+                  "reason": "Incorrectly made request.",
+                  "message": "updateCompilation.compId: must be greater than 0",
+                  "timestamp": "2024-02-11 16:57:15"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/ApiError"
                 }
               }
             },
-            "description": "Подборка не найдена или недоступна"
+            "description": "Запрос составлен некорректно"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "NOT_FOUND",
+                  "reason": "The required object was not found.",
+                  "message": "Compilation with id=50 was not found.",
+                  "timestamp": "2024-02-11 16:49:11"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Подборка не найдена"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "CONFLICT",
+                  "reason": "Integrity constraint has been violated.",
+                  "message": "could not execute statement; SQL [n/a]; constraint [uq_compilation_title]; nested exception is org.hibernate.exception.ConstraintViolationException: could not execute statement",
+                  "timestamp": "2024-02-11 16:54:56"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Обновление имени подборки на уже существующее"
           }
         },
-        "summary": "Обновить информацию о подборке",
+        "summary": "Обновление подборки",
         "tags": [
           "Admin: Подборки событий"
         ]
@@ -415,7 +517,7 @@
     },
     "/admin/events": {
       "get": {
-        "description": "Эндпоинт возвращает полную информацию обо всех событиях подходящих под переданные условия\n\nВ случае, если по заданным фильтрам не найдено ни одного события, возвращает пустой список",
+        "description": "Возвращает полную информацию обо всех событиях, подходящих под переданные условия",
         "operationId": "getEvents_2",
         "parameters": [
           {
@@ -432,7 +534,7 @@
             }
           },
           {
-            "description": "список состояний в которых находятся искомые события",
+            "description": "список состояний, в которых находятся искомые события",
             "in": "query",
             "name": "states",
             "required": false,
@@ -444,7 +546,7 @@
             }
           },
           {
-            "description": "список id категорий в которых будет вестись поиск",
+            "description": "список id категорий, в которых будет вестись поиск",
             "in": "query",
             "name": "categories",
             "required": false,
@@ -457,7 +559,7 @@
             }
           },
           {
-            "description": "дата и время не раньше которых должно произойти событие",
+            "description": "дата и время, не раньше которых должно произойти событие",
             "in": "query",
             "name": "rangeStart",
             "required": false,
@@ -466,7 +568,7 @@
             }
           },
           {
-            "description": "дата и время не позже которых должно произойти событие",
+            "description": "дата и время, не позже которых должно произойти событие",
             "in": "query",
             "name": "rangeEnd",
             "required": false,
@@ -492,6 +594,7 @@
             "name": "size",
             "required": false,
             "schema": {
+              "minimum": 1,
               "type": "integer",
               "format": "int32",
               "default": 10
@@ -518,8 +621,8 @@
                 "example": {
                   "status": "BAD_REQUEST",
                   "reason": "Incorrectly made request.",
-                  "message": "Failed to convert value of type java.lang.String to required type int; nested exception is java.lang.NumberFormatException: For input string: ad",
-                  "timestamp": "2022-09-07 09:10:50"
+                  "message": "getEvents.from: must be greater than or equal to 0",
+                  "timestamp": "2024-02-12 01:04:57"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/ApiError"
@@ -537,7 +640,7 @@
     },
     "/admin/events/{eventId}": {
       "patch": {
-        "description": "Редактирование данных любого события администратором. Валидация данных не требуется.\nОбратите внимание:\n - дата начала изменяемого события должна быть не ранее чем за час от даты публикации. (Ожидается код ошибки 409)\n- событие можно публиковать, только если оно в состоянии ожидания публикации (Ожидается код ошибки 409)\n- событие можно отклонить, только если оно еще не опубликовано (Ожидается код ошибки 409)",
+        "description": "Обратите внимание:\n - если поле в запросе не указано, равно null или пустое, то изменение этих данных не будет выполнено \n - дата начала изменяемого события должна быть не ранее чем за час от даты публикации. (Ожидается код ошибки 400)\n- событие можно опубликовать, только если оно в состоянии ожидания публикации (Ожидается код ошибки 409)\n- событие можно отклонить, только если оно еще не опубликовано (Ожидается код ошибки 409)",
         "operationId": "updateEvent_1",
         "parameters": [
           {
@@ -547,6 +650,7 @@
             "required": true,
             "schema": {
               "type": "integer",
+              "minimum": 1,
               "format": "int64"
             }
           }
@@ -559,7 +663,6 @@
               }
             }
           },
-          "description": "Данные для изменения информации о событии",
           "required": true
         },
         "responses": {
@@ -573,30 +676,46 @@
             },
             "description": "Событие отредактировано"
           },
-          "404": {
+          "400": {
             "content": {
               "application/json": {
                 "example": {
-                  "status": "NOT_FOUND",
-                  "reason": "The required object was not found.",
-                  "message": "Event with id=2 was not found",
-                  "timestamp": "2022-09-07 09:10:50"
+                  "status": "BAD_REQUEST",
+                  "reason": "Incorrectly made request.",
+                  "message": "Event date should be not earlier than 2024-02-12 00:32:57.",
+                  "timestamp": "2024-02-11 22:32:57"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/ApiError"
                 }
               }
             },
-            "description": "Событие не найдено или недоступно"
+            "description": "Запрос составлен некорректно"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "NOT_FOUND",
+                  "reason": "The required object was not found.",
+                  "message": "Event with id=11 was not found.",
+                  "timestamp": "2024-02-11 22:30:27"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Событие не найдено"
           },
           "409": {
             "content": {
               "application/json": {
                 "example": {
-                  "status": "FORBIDDEN",
+                  "status": "CONFLICT",
                   "reason": "For the requested operation the conditions are not met.",
-                  "message": "Cannot publish the event because it's not in the right state: PUBLISHED",
-                  "timestamp": "2022-09-07 09:10:50"
+                  "message": "Cannot publish the event because it's not in the right state: PUBLISHED.",
+                  "timestamp": "2024-02-11 22:34:08"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/ApiError"
@@ -606,7 +725,7 @@
             "description": "Событие не удовлетворяет правилам редактирования"
           }
         },
-        "summary": "Редактирование данных события и его статуса (отклонение/публикация).",
+        "summary": "Редактирование данных события и его статуса (отклонение/публикация)",
         "tags": [
           "Admin: События"
         ]
@@ -614,7 +733,7 @@
     },
     "/admin/users": {
       "get": {
-        "description": "Возвращает информацию обо всех пользователях (учитываются параметры ограничения выборки), либо о конкретных (учитываются указанные идентификаторы)\n\nВ случае, если по заданным фильтрам не найдено ни одного пользователя, возвращает пустой список",
+        "description": "Возвращает информацию обо всех пользователях, учитываются параметры ограничения выборки, либо о конкретных, учитываются указанные идентификаторы",
         "operationId": "getUsers",
         "parameters": [
           {
@@ -648,6 +767,7 @@
             "name": "size",
             "required": false,
             "schema": {
+              "minimum": 1,
               "type": "integer",
               "format": "int32",
               "default": 10
@@ -674,8 +794,8 @@
                 "example": {
                   "status": "BAD_REQUEST",
                   "reason": "Incorrectly made request.",
-                  "message": "Failed to convert value of type java.lang.String to required type int; nested exception is java.lang.NumberFormatException: For input string: ad",
-                  "timestamp": "2022-09-07 09:10:50"
+                  "message": "getUsers.size: must be greater than 0",
+                  "timestamp": "2024-02-12 08:28:30"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/ApiError"
@@ -700,7 +820,6 @@
               }
             }
           },
-          "description": "Данные добавляемого пользователя",
           "required": true
         },
         "responses": {
@@ -712,7 +831,7 @@
                 }
               }
             },
-            "description": "Пользователь зарегистрирован"
+            "description": "Пользователь создан"
           },
           "400": {
             "content": {
@@ -720,8 +839,8 @@
                 "example": {
                   "status": "BAD_REQUEST",
                   "reason": "Incorrectly made request.",
-                  "message": "Field: name. Error: must not be blank. Value: null",
-                  "timestamp": "2022-09-07 09:10:50"
+                  "message": "Validation failed for argument [0] in public ru.practicum.user.dto.UserDto ru.practicum.user.controller.UserAdminController.createUser(ru.practicum.user.dto.NewUserRequest) with 2 errors: [Field error in object 'newUserRequest' on field 'name': rejected value [ ]; codes [NotBlank.newUserRequest.name,NotBlank.name,NotBlank.java.lang.String,NotBlank]; arguments [org.springframework.context.support.DefaultMessageSourceResolvable: codes [newUserRequest.name,name]; arguments []; default message [name]]; default message [must not be blank]] [Field error in object 'newUserRequest' on field 'name': rejected value [ ]; codes [Size.newUserRequest.name,Size.name,Size.java.lang.String,Size]; arguments [org.springframework.context.support.DefaultMessageSourceResolvable: codes [newUserRequest.name,name]; arguments []; default message [name],250,2]; default message [size must be between 2 and 250]]",
+                  "timestamp": "2024-02-12 08:41:40"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/ApiError"
@@ -736,15 +855,15 @@
                 "example": {
                   "status": "CONFLICT",
                   "reason": "Integrity constraint has been violated.",
-                  "message": "could not execute statement; SQL [n/a]; constraint [uq_email]; nested exception is org.hibernate.exception.ConstraintViolationException: could not execute statement",
-                  "timestamp": "2022-09-07 09:10:50"
+                  "message": "could not execute statement; SQL [n/a]; constraint [uq_user_email]; nested exception is org.hibernate.exception.ConstraintViolationException: could not execute statement",
+                  "timestamp": "2024-02-12 08:37:13"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/ApiError"
                 }
               }
             },
-            "description": "Нарушение целостности данных"
+            "description": "Создание пользователя с уже существующим почтовым адресом"
           }
         },
         "summary": "Добавление нового пользователя",
@@ -763,6 +882,7 @@
             "name": "userId",
             "required": true,
             "schema": {
+              "minimum": 1,
               "type": "integer",
               "format": "int64"
             }
@@ -772,21 +892,37 @@
           "204": {
             "description": "Пользователь удален"
           },
-          "404": {
+          "400": {
             "content": {
               "application/json": {
                 "example": {
-                  "status": "NOT_FOUND",
-                  "reason": "The required object was not found.",
-                  "message": "User with id=555 was not found",
-                  "timestamp": "2022-09-07 09:10:50"
+                  "status": "BAD_REQUEST",
+                  "reason": "Incorrectly made request.",
+                  "message": "deleteUser.userId: must be greater than 0",
+                  "timestamp": "2024-02-12 08:46:08"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/ApiError"
                 }
               }
             },
-            "description": "Пользователь не найден или недоступен"
+            "description": "Запрос составлен некорректно"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "NOT_FOUND",
+                  "reason": "The required object was not found.",
+                  "message": "User with id=3 was not found.",
+                  "timestamp": "2024-02-12 08:45:36"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Пользователь не найден"
           }
         },
         "summary": "Удаление пользователя",
@@ -797,7 +933,6 @@
     },
     "/categories": {
       "get": {
-        "description": "В случае, если по заданным фильтрам не найдено ни одной категории, возвращает пустой список",
         "operationId": "getCategories",
         "parameters": [
           {
@@ -818,6 +953,7 @@
             "name": "size",
             "required": false,
             "schema": {
+              "minimum": 1,
               "type": "integer",
               "format": "int32",
               "default": 10
@@ -844,8 +980,8 @@
                 "example": {
                   "status": "BAD_REQUEST",
                   "reason": "Incorrectly made request.",
-                  "message": "Failed to convert value of type java.lang.String to required type int; nested exception is java.lang.NumberFormatException: For input string: ad",
-                  "timestamp": "2022-09-07 09:10:50"
+                  "message": "getCategories.size: must be greater than 0",
+                  "timestamp": "2024-02-12 10:30:44"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/ApiError"
@@ -863,7 +999,6 @@
     },
     "/categories/{catId}": {
       "get": {
-        "description": "В случае, если категории с заданным id не найдено, возвращает статус код 404",
         "operationId": "getCategory",
         "parameters": [
           {
@@ -872,6 +1007,7 @@
             "name": "catId",
             "required": true,
             "schema": {
+              "minimum": 1,
               "type": "integer",
               "format": "int64"
             }
@@ -894,8 +1030,8 @@
                 "example": {
                   "status": "BAD_REQUEST",
                   "reason": "Incorrectly made request.",
-                  "message": "Failed to convert value of type java.lang.String to required type long; nested exception is java.lang.NumberFormatException: For input string: ad",
-                  "timestamp": "2022-09-07 09:10:50"
+                  "message": "getCategoryById.catId: must be greater than 0",
+                  "timestamp": "2024-02-12 10:37:32"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/ApiError"
@@ -910,15 +1046,15 @@
                 "example": {
                   "status": "NOT_FOUND",
                   "reason": "The required object was not found.",
-                  "message": "Category with id=19 was not found",
-                  "timestamp": "2022-09-07 09:10:50"
+                  "message": "Category with id=10 was not found.",
+                  "timestamp": "2024-02-12 10:38:23"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/ApiError"
                 }
               }
             },
-            "description": "Категория не найдена или недоступна"
+            "description": "Категория не найдена"
           }
         },
         "summary": "Получение информации о категории по её идентификатору",
@@ -929,7 +1065,6 @@
     },
     "/compilations": {
       "get": {
-        "description": "В случае, если по заданным фильтрам не найдено ни одной подборки, возвращает пустой список",
         "operationId": "getCompilations",
         "parameters": [
           {
@@ -959,6 +1094,7 @@
             "name": "size",
             "required": false,
             "schema": {
+              "minimum": 1,
               "type": "integer",
               "format": "int32",
               "default": 10
@@ -985,8 +1121,8 @@
                 "example": {
                   "status": "BAD_REQUEST",
                   "reason": "Incorrectly made request.",
-                  "message": "Failed to convert value of type java.lang.String to required type int; nested exception is java.lang.NumberFormatException: For input string: ad",
-                  "timestamp": "2022-09-07 09:10:50"
+                  "message": "getCompilations.size: must be greater than 0",
+                  "timestamp": "2024-02-12 10:47:18"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/ApiError"
@@ -1004,7 +1140,6 @@
     },
     "/compilations/{compId}": {
       "get": {
-        "description": "В случае, если подборки с заданным id не найдено, возвращает статус код 404",
         "operationId": "getCompilation",
         "parameters": [
           {
@@ -1013,6 +1148,7 @@
             "name": "compId",
             "required": true,
             "schema": {
+              "minimum": 1,
               "type": "integer",
               "format": "int64"
             }
@@ -1035,8 +1171,8 @@
                 "example": {
                   "status": "BAD_REQUEST",
                   "reason": "Incorrectly made request.",
-                  "message": "Failed to convert value of type java.lang.String to required type long; nested exception is java.lang.NumberFormatException: For input string: ad",
-                  "timestamp": "2022-09-07 09:10:50"
+                  "message": "getCompilationById.compId: must be greater than 0",
+                  "timestamp": "2024-02-12 10:53:14"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/ApiError"
@@ -1051,18 +1187,18 @@
                 "example": {
                   "status": "NOT_FOUND",
                   "reason": "The required object was not found.",
-                  "message": "Compilation with id=84 was not found",
-                  "timestamp": "2022-09-07 09:10:50"
+                  "message": "Compilation with id=1 was not found.",
+                  "timestamp": "2024-02-12 10:52:19"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/ApiError"
                 }
               }
             },
-            "description": "Подборка не найдена или недоступна"
+            "description": "Подборка не найдена"
           }
         },
-        "summary": "Получение подборки событий по его id",
+        "summary": "Получение подборки событий по ее id",
         "tags": [
           "Public: Подборки событий"
         ]
@@ -1070,22 +1206,20 @@
     },
     "/events": {
       "get": {
-        "description": "Обратите внимание: \n- это публичный эндпоинт, соответственно в выдаче должны быть только опубликованные события\n- текстовый поиск (по аннотации и подробному описанию) должен быть без учета регистра букв\n- если в запросе не указан диапазон дат [rangeStart-rangeEnd], то нужно выгружать события, которые произойдут позже текущей даты и времени\n- информация о каждом событии должна включать в себя количество просмотров и количество уже одобренных заявок на участие\n- информацию о том, что по этому эндпоинту был осуществлен и обработан запрос, нужно сохранить в сервисе статистики\n\nВ случае, если по заданным фильтрам не найдено ни одного события, возвращает пустой список",
+        "description": "Обратите внимание: \n- в выдаче присутствуют только опубликованные события\n- текстовый поиск проводится без учета регистра\n- если в запросе не указан диапазон дат [rangeStart-rangeEnd], то выгружаются события, которые произойдут позже текущей даты и времени\n- информация о том, что по этому эндпоинту был осуществлен и обработан запрос, сохраняется в сервисе статистики",
         "operationId": "getEvents_1",
         "parameters": [
           {
-            "description": "текст для поиска в содержимом аннотации и подробном описании события",
+            "description": "текст для поиска в кратком и подробном описаниях событий",
             "in": "query",
             "name": "text",
             "required": false,
             "schema": {
-              "maxLength": 7000,
-              "minLength": 1,
               "type": "string"
             }
           },
           {
-            "description": "список идентификаторов категорий в которых будет вестись поиск",
+            "description": "список идентификаторов категорий, в которых будет вестись поиск",
             "in": "query",
             "name": "categories",
             "required": false,
@@ -1107,7 +1241,7 @@
             }
           },
           {
-            "description": "дата и время не раньше которых должно произойти событие",
+            "description": "дата и время, не раньше которых должно произойти событие",
             "in": "query",
             "name": "rangeStart",
             "required": false,
@@ -1116,7 +1250,7 @@
             }
           },
           {
-            "description": "дата и время не позже которых должно произойти событие",
+            "description": "дата и время, не позже которых должно произойти событие",
             "in": "query",
             "name": "rangeEnd",
             "required": false,
@@ -1125,17 +1259,7 @@
             }
           },
           {
-            "description": "только события у которых не исчерпан лимит запросов на участие",
-            "in": "query",
-            "name": "onlyAvailable",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "default": false
-            }
-          },
-          {
-            "description": "Вариант сортировки: по дате события или по количеству просмотров",
+            "description": "вариант сортировки: по дате события или по количеству просмотров",
             "in": "query",
             "name": "sort",
             "required": false,
@@ -1145,6 +1269,16 @@
                 "EVENT_DATE",
                 "VIEWS"
               ]
+            }
+          },
+          {
+            "description": "только события, у которых не исчерпан лимит запросов на участие",
+            "in": "query",
+            "name": "onlyAvailable",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
             }
           },
           {
@@ -1165,6 +1299,7 @@
             "name": "size",
             "required": false,
             "schema": {
+              "minimum": 1,
               "type": "integer",
               "format": "int32",
               "default": 10
@@ -1191,8 +1326,8 @@
                 "example": {
                   "status": "BAD_REQUEST",
                   "reason": "Incorrectly made request.",
-                  "message": "Event must be published",
-                  "timestamp": "2022-09-07 09:10:50"
+                  "message": "getUserEvents.from: must be greater than or equal to 0",
+                  "timestamp": "2024-02-12 11:35:58"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/ApiError"
@@ -1210,7 +1345,7 @@
     },
     "/events/{id}": {
       "get": {
-        "description": "Обратите внимание:\n- событие должно быть опубликовано\n- информация о событии должна включать в себя количество просмотров и количество подтвержденных запросов\n- информацию о том, что по этому эндпоинту был осуществлен и обработан запрос, нужно сохранить в сервисе статистики\n\nВ случае, если события с заданным id не найдено, возвращает статус код 404",
+        "description": "Обратите внимание:\n- событие должно быть опубликовано\n- информация о том, что по этому эндпоинту был осуществлен и обработан запрос, сохраняется в сервисе статистики",
         "operationId": "getEvent_1",
         "parameters": [
           {
@@ -1219,6 +1354,7 @@
             "name": "id",
             "required": true,
             "schema": {
+              "minimum": 1,
               "type": "integer",
               "format": "int64"
             }
@@ -1241,8 +1377,8 @@
                 "example": {
                   "status": "BAD_REQUEST",
                   "reason": "Incorrectly made request.",
-                  "message": "Failed to convert value of type java.lang.String to required type int; nested exception is java.lang.NumberFormatException: For input string: ad",
-                  "timestamp": "2022-09-07 09:10:50"
+                  "message": "getEventById.eventId: must be greater than 0",
+                  "timestamp": "2024-02-12 11:54:33"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/ApiError"
@@ -1257,15 +1393,15 @@
                 "example": {
                   "status": "NOT_FOUND",
                   "reason": "The required object was not found.",
-                  "message": "Event with id=13 was not found",
-                  "timestamp": "2022-09-07 09:10:50"
+                  "message": "Event with id=2 was not found.",
+                  "timestamp": "2024-02-12 11:55:15"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/ApiError"
                 }
               }
             },
-            "description": "Событие не найдено или недоступно"
+            "description": "Событие не найдено или не опубликовано"
           }
         },
         "summary": "Получение подробной информации об опубликованном событии по его идентификатору",
@@ -1276,15 +1412,15 @@
     },
     "/users/{userId}/events": {
       "get": {
-        "description": "В случае, если по заданным фильтрам не найдено ни одного события, возвращает пустой список",
         "operationId": "getEvents",
         "parameters": [
           {
-            "description": "id текущего пользователя",
+            "description": "id пользователя",
             "in": "path",
             "name": "userId",
             "required": true,
             "schema": {
+              "minimum": 1,
               "type": "integer",
               "format": "int64"
             }
@@ -1307,6 +1443,7 @@
             "name": "size",
             "required": false,
             "schema": {
+              "minimum": 1,
               "type": "integer",
               "format": "int32",
               "default": 10
@@ -1333,8 +1470,8 @@
                 "example": {
                   "status": "BAD_REQUEST",
                   "reason": "Incorrectly made request.",
-                  "message": "Failed to convert value of type java.lang.String to required type int; nested exception is java.lang.NumberFormatException: For input string: ad",
-                  "timestamp": "2022-09-07 09:10:50"
+                  "message": "getUserEvents.userId: must be greater than 0",
+                  "timestamp": "2024-02-12 14:13:55"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/ApiError"
@@ -1344,21 +1481,22 @@
             "description": "Запрос составлен некорректно"
           }
         },
-        "summary": "Получение событий, добавленных текущим пользователем",
+        "summary": "Получение событий, добавленных пользователем",
         "tags": [
           "Private: События"
         ]
       },
       "post": {
-        "description": "Обратите внимание: дата и время на которые намечено событие не может быть раньше, чем через два часа от текущего момента",
+        "description": "Обратите внимание: дата и время, на которые намечено событие, не может быть раньше, чем через два часа от текущего момента",
         "operationId": "addEvent",
         "parameters": [
           {
-            "description": "id текущего пользователя",
+            "description": "id пользователя",
             "in": "path",
             "name": "userId",
             "required": true,
             "schema": {
+              "minimum": 1,
               "type": "integer",
               "format": "int64"
             }
@@ -1372,7 +1510,6 @@
               }
             }
           },
-          "description": "данные добавляемого события",
           "required": true
         },
         "responses": {
@@ -1392,8 +1529,8 @@
                 "example": {
                   "status": "BAD_REQUEST",
                   "reason": "Incorrectly made request.",
-                  "message": "Field: category. Error: must not be blank. Value: null",
-                  "timestamp": "2022-09-07 09:10:50"
+                  "message": "Validation failed for argument [1] in public ru.practicum.event.dto.EventFullDto ru.practicum.event.controller.EventPrivateController.createEvent(long,ru.practicum.event.dto.NewEventDto): [Field error in object 'newEventDto' on field 'category': rejected value [null]; codes [NotNull.newEventDto.category,NotNull.category,NotNull.java.lang.Long,NotNull]; arguments [org.springframework.context.support.DefaultMessageSourceResolvable: codes [newEventDto.category,category]; arguments []; default message [category]]; default message [must not be null]]",
+                  "timestamp": "2024-02-12 14:40:52"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/ApiError"
@@ -1402,24 +1539,24 @@
             },
             "description": "Запрос составлен некорректно"
           },
-          "409": {
+          "404": {
             "content": {
               "application/json": {
                 "example": {
-                  "status": "FORBIDDEN",
-                  "reason": "For the requested operation the conditions are not met.",
-                  "message": "Field: eventDate. Error: должно содержать дату, которая еще не наступила. Value: 2020-12-31T15:10:05",
-                  "timestamp": "2022-09-07 09:10:50"
+                  "status": "NOT_FOUND",
+                  "reason": "The required object was not found.",
+                  "message": "Category with id=2 was not found.",
+                  "timestamp": "2024-02-12 14:39:39"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/ApiError"
                 }
               }
             },
-            "description": "Событие не удовлетворяет правилам создания"
+            "description": "Категория не найдена"
           }
         },
-        "summary": "Добавление нового события",
+        "summary": "Добавление нового события пользователем",
         "tags": [
           "Private: События"
         ]
@@ -1427,15 +1564,15 @@
     },
     "/users/{userId}/events/{eventId}": {
       "get": {
-        "description": "В случае, если события с заданным id не найдено, возвращает статус код 404",
         "operationId": "getEvent",
         "parameters": [
           {
-            "description": "id текущего пользователя",
+            "description": "id пользователя",
             "in": "path",
             "name": "userId",
             "required": true,
             "schema": {
+              "minimum": 1,
               "type": "integer",
               "format": "int64"
             }
@@ -1446,6 +1583,7 @@
             "name": "eventId",
             "required": true,
             "schema": {
+              "minimum": 1,
               "type": "integer",
               "format": "int64"
             }
@@ -1468,8 +1606,8 @@
                 "example": {
                   "status": "BAD_REQUEST",
                   "reason": "Incorrectly made request.",
-                  "message": "Failed to convert value of type java.lang.String to required type long; nested exception is java.lang.NumberFormatException: For input string: ad",
-                  "timestamp": "2022-09-07 09:10:50"
+                  "message": "getEventById.userId: must be greater than 0",
+                  "timestamp": "2024-02-12 14:50:07"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/ApiError"
@@ -1484,32 +1622,33 @@
                 "example": {
                   "status": "NOT_FOUND",
                   "reason": "The required object was not found.",
-                  "message": "Event with id=13 was not found",
-                  "timestamp": "2022-09-07 09:10:50"
+                  "message": "User with id=1 doesn't have the event with id=10.",
+                  "timestamp": "2024-02-12 15:09:44"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/ApiError"
                 }
               }
             },
-            "description": "Событие не найдено или недоступно"
+            "description": "Событие не найдено у пользователя"
           }
         },
-        "summary": "Получение полной информации о событии добавленном текущим пользователем",
+        "summary": "Получение полной информации о событии, добавленном пользователем",
         "tags": [
           "Private: События"
         ]
       },
       "patch": {
-        "description": "Обратите внимание:\n- изменить можно только отмененные события или события в состоянии ожидания модерации (Ожидается код ошибки 409)\n- дата и время на которые намечено событие не может быть раньше, чем через два часа от текущего момента (Ожидается код ошибки 409)\n",
+        "description": "Обратите внимание: \n - если поле в запросе не указано, равно null или пустое, то изменение этих данных не будет выполнено\n- изменить можно только отмененные события или ожидающие модерации (Ожидается код ошибки 409)\n- дата и время, на которые намечено событие не может быть раньше, чем через два часа от текущего момента (Ожидается код ошибки 400)\n",
         "operationId": "updateEvent",
         "parameters": [
           {
-            "description": "id текущего пользователя",
+            "description": "id пользователя",
             "in": "path",
             "name": "userId",
             "required": true,
             "schema": {
+              "minimum": 1,
               "type": "integer",
               "format": "int64"
             }
@@ -1520,6 +1659,7 @@
             "name": "eventId",
             "required": true,
             "schema": {
+              "minimum": 1,
               "type": "integer",
               "format": "int64"
             }
@@ -1533,7 +1673,6 @@
               }
             }
           },
-          "description": "Новые данные события",
           "required": true
         },
         "responses": {
@@ -1553,8 +1692,8 @@
                 "example": {
                   "status": "BAD_REQUEST",
                   "reason": "Incorrectly made request.",
-                  "message": "Event must not be published",
-                  "timestamp": "2022-09-07 09:10:50"
+                  "message": "Event date should be not earlier than 2024-02-12 17:29:49.",
+                  "timestamp": "2024-02-12 15:29:49"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/ApiError"
@@ -1569,24 +1708,24 @@
                 "example": {
                   "status": "NOT_FOUND",
                   "reason": "The required object was not found.",
-                  "message": "Event with id=283 was not found",
-                  "timestamp": "2022-09-07 09:10:50"
+                  "message": "User with id=1 doesn't have the event with id=10.",
+                  "timestamp": "2024-02-12 15:28:13"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/ApiError"
                 }
               }
             },
-            "description": "Событие не найдено или недоступно"
+            "description": "Событие не найдено у пользователя"
           },
           "409": {
             "content": {
               "application/json": {
                 "example": {
-                  "status": "FORBIDDEN",
+                  "status": "CONFLICT",
                   "reason": "For the requested operation the conditions are not met.",
-                  "message": "Only pending or canceled events can be changed",
-                  "timestamp": "2022-09-07 09:10:50"
+                  "message": "Only pending or canceled events can be changed.",
+                  "timestamp": "2024-02-12 15:27:13"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/ApiError"
@@ -1596,7 +1735,7 @@
             "description": "Событие не удовлетворяет правилам редактирования"
           }
         },
-        "summary": "Изменение события добавленного текущим пользователем",
+        "summary": "Изменение события, добавленного пользователем",
         "tags": [
           "Private: События"
         ]
@@ -1604,15 +1743,15 @@
     },
     "/users/{userId}/events/{eventId}/requests": {
       "get": {
-        "description": "В случае, если по заданным фильтрам не найдено ни одной заявки, возвращает пустой список",
         "operationId": "getEventParticipants",
         "parameters": [
           {
-            "description": "id текущего пользователя",
+            "description": "id пользователя",
             "in": "path",
             "name": "userId",
             "required": true,
             "schema": {
+              "minimum": 1,
               "type": "integer",
               "format": "int64"
             }
@@ -1623,6 +1762,7 @@
             "name": "eventId",
             "required": true,
             "schema": {
+              "minimum": 1,
               "type": "integer",
               "format": "int64"
             }
@@ -1648,8 +1788,8 @@
                 "example": {
                   "status": "BAD_REQUEST",
                   "reason": "Incorrectly made request.",
-                  "message": "Failed to convert value of type java.lang.String to required type int; nested exception is java.lang.NumberFormatException: For input string: ad",
-                  "timestamp": "2022-09-07 09:10:50"
+                  "message": "getEventRequests.userId: must be greater than 0",
+                  "timestamp": "2024-02-12 15:39:01"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/ApiError"
@@ -1657,33 +1797,51 @@
               }
             },
             "description": "Запрос составлен некорректно"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "CONFLICT",
+                  "reason": "For the requested operation the conditions are not met.",
+                  "message": "Only event initiator can get event participation requests.",
+                  "timestamp": "2024-02-12 15:37:26"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Событие не найдено у пользователя"
           }
         },
-        "summary": "Получение информации о запросах на участие в событии текущего пользователя",
+        "summary": "Получение информации о запросах на участие в событии пользователя",
         "tags": [
           "Private: События"
         ]
       },
       "patch": {
-        "description": "Обратите внимание:\n- если для события лимит заявок равен 0 или отключена пре-модерация заявок, то подтверждение заявок не требуется\n- нельзя подтвердить заявку, если уже достигнут лимит по заявкам на данное событие (Ожидается код ошибки 409)\n- статус можно изменить только у заявок, находящихся в состоянии ожидания (Ожидается код ошибки 409)\n- если при подтверждении данной заявки, лимит заявок для события исчерпан, то все неподтверждённые заявки необходимо отклонить",
+        "description": "Обратите внимание:\n- если для события лимит заявок равен 0 или отключена пре-модерация заявок, то подтверждение заявок не требуется (Ожидается код ошибки 409)\n- нельзя подтвердить заявку, если уже достигнут лимит по заявкам на данное событие (Ожидается код ошибки 409)\n- статус можно изменить только у заявок, находящихся в состоянии ожидания (Ожидается код ошибки 409)\n- если при подтверждении данной заявки, лимит заявок для события исчерпан, то все неподтверждённые заявки отклоняются\n- если после подтверждения всех заявок на участие будет превышен лимит, то ни одна заявка из списка не будет подтверждена (Ожидается код ошибки 409) ",
         "operationId": "changeRequestStatus",
         "parameters": [
           {
-            "description": "id текущего пользователя",
+            "description": "id пользователя",
             "in": "path",
             "name": "userId",
             "required": true,
             "schema": {
+              "minimum": 1,
               "type": "integer",
               "format": "int64"
             }
           },
           {
-            "description": "id события текущего пользователя",
+            "description": "id события пользователя",
             "in": "path",
             "name": "eventId",
             "required": true,
             "schema": {
+              "minimum": 1,
               "type": "integer",
               "format": "int64"
             }
@@ -1697,7 +1855,6 @@
               }
             }
           },
-          "description": "Новый статус для заявок на участие в событии текущего пользователя",
           "required": true
         },
         "responses": {
@@ -1717,8 +1874,8 @@
                 "example": {
                   "status": "BAD_REQUEST",
                   "reason": "Incorrectly made request.",
-                  "message": "Request must have status PENDING",
-                  "timestamp": "2022-09-07 09:10:50"
+                  "message": "cancelRequest.requestId: must be greater than 0",
+                  "timestamp": "2024-02-12 16:39:25"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/ApiError"
@@ -1733,15 +1890,15 @@
                 "example": {
                   "status": "NOT_FOUND",
                   "reason": "The required object was not found.",
-                  "message": "Event with id=321 was not found",
-                  "timestamp": "2022-09-07 09:10:50"
+                  "message": "User with id=1 doesn't have the participation request with id=1.",
+                  "timestamp": "2024-02-12 16:38:28"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/ApiError"
                 }
               }
             },
-            "description": "Событие не найдено или недоступно"
+            "description": "Заявка на участие в событии не найдена"
           },
           "409": {
             "content": {
@@ -1749,8 +1906,8 @@
                 "example": {
                   "status": "CONFLICT",
                   "reason": "For the requested operation the conditions are not met.",
-                  "message": "The participant limit has been reached",
-                  "timestamp": "2022-09-07 09:10:50"
+                  "message": "Event participation requests count is more than available to confirm.",
+                  "timestamp": "2024-02-12 16:43:40"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/ApiError"
@@ -1760,7 +1917,360 @@
             "description": "Достигнут лимит одобренных заявок"
           }
         },
-        "summary": "Изменение статуса (подтверждена, отменена) заявок на участие в событии текущего пользователя",
+        "summary": "Изменение статуса (подтверждение/отклонение) заявок на участие в событии пользователя",
+        "tags": [
+          "Private: События"
+        ]
+      }
+    },
+    "/users/{userId}/friends/{friendId}/events": {
+      "get": {
+        "description": "Обратите внимание: \n - можно получить события, в которых участвует либо друг пользователя, либо пользователь, на которого он подписан \n - подборка событий будет формироваться с учетом видимости, установленной пользователем, т.е. если пользователь поставил видимость \"FRIENDS\", то события, в которых он участвует, будут видны только друзьям",
+        "operationId": "getFriendEvents",
+        "parameters": [
+          {
+            "description": "id пользователя",
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "description": "id друга",
+            "in": "path",
+            "name": "friendId",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "description": "текст для поиска в кратком и подробном описаниях событий",
+            "in": "query",
+            "name": "text",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "список идентификаторов категорий, в которых будет вестись поиск",
+            "in": "query",
+            "name": "categories",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "int64"
+              }
+            }
+          },
+          {
+            "description": "поиск только платных/бесплатных событий",
+            "in": "query",
+            "name": "paid",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "description": "дата и время, не раньше которых должно произойти событие",
+            "in": "query",
+            "name": "rangeStart",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "дата и время, не позже которых должно произойти событие",
+            "in": "query",
+            "name": "rangeEnd",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "вариант сортировки: по дате события или по количеству просмотров",
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "EVENT_DATE",
+                "VIEWS"
+              ]
+            }
+          },
+          {
+            "description": "только события, у которых не исчерпан лимит запросов на участие",
+            "in": "query",
+            "name": "onlyAvailable",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "description": "количество событий, которые нужно пропустить для формирования текущего набора",
+            "in": "query",
+            "name": "from",
+            "required": false,
+            "schema": {
+              "minimum": 0,
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "description": "количество событий в наборе",
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EventShortDto"
+                  }
+                }
+              }
+            },
+            "description": "Найдены события, в которых участвует друг"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "BAD_REQUEST",
+                  "reason": "Incorrectly made request.",
+                  "message": "getFriendEvents.userId: must be greater than 0",
+                  "timestamp": "2024-02-13 17:40:56"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Запрос составлен некорректно"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "NOT_FOUND",
+                  "reason": "The required object was not found.",
+                  "message": "You aren't friend or follower of user with id=8",
+                  "timestamp": "2024-02-13 17:40:00"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Пользователь не найден"
+          }
+        },
+        "summary": "Получение событий, в которых участвует друг",
+        "tags": [
+          "Private: События"
+        ]
+      }
+    },
+    "/users/{userId}/friends/events": {
+      "get": {
+        "description": "Обратите внимание: \n - можно получить события, в которых участвуют либо друзья пользователя, либо пользователи, на которых он подписан \n - подборка событий будет формироваться с учетом видимости, установленной пользователем, т.е. если пользователь поставил видимость \"FRIENDS\", то события, в которых он участвует, будут видны только друзьям",
+        "operationId": "getFriendsEvents",
+        "parameters": [
+          {
+            "description": "id пользователя",
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "description": "текст для поиска в кратком и подробном описаниях событий",
+            "in": "query",
+            "name": "text",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "список идентификаторов категорий, в которых будет вестись поиск",
+            "in": "query",
+            "name": "categories",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "int64"
+              }
+            }
+          },
+          {
+            "description": "поиск только платных/бесплатных событий",
+            "in": "query",
+            "name": "paid",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "description": "дата и время, не раньше которых должно произойти событие",
+            "in": "query",
+            "name": "rangeStart",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "дата и время, не позже которых должно произойти событие",
+            "in": "query",
+            "name": "rangeEnd",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "вариант сортировки: по дате события или по количеству просмотров",
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "EVENT_DATE",
+                "VIEWS"
+              ]
+            }
+          },
+          {
+            "description": "только события, в которых участвую друзья",
+            "in": "query",
+            "name": "onlyFriends",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "description": "только события, у которых не исчерпан лимит запросов на участие",
+            "in": "query",
+            "name": "onlyAvailable",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "description": "количество событий, которые нужно пропустить для формирования текущего набора",
+            "in": "query",
+            "name": "from",
+            "required": false,
+            "schema": {
+              "minimum": 0,
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "description": "количество событий в наборе",
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EventShortDto"
+                  }
+                }
+              }
+            },
+            "description": "Найдены события, в которых участвуют друзья"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "BAD_REQUEST",
+                  "reason": "Incorrectly made request.",
+                  "message": "getFriendEvents.userId: must be greater than 0",
+                  "timestamp": "2024-02-13 17:40:56"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Запрос составлен некорректно"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "NOT_FOUND",
+                  "reason": "The required object was not found.",
+                  "message": "User with id=101 was not found.",
+                  "timestamp": "2024-02-13 18:08:19"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Пользователь не найден"
+          }
+        },
+        "summary": "Получение событий, в которых участвуют друзья",
         "tags": [
           "Private: События"
         ]
@@ -1768,15 +2278,15 @@
     },
     "/users/{userId}/requests": {
       "get": {
-        "description": "В случае, если по заданным фильтрам не найдено ни одной заявки, возвращает пустой список",
         "operationId": "getUserRequests",
         "parameters": [
           {
-            "description": "id текущего пользователя",
+            "description": "id пользователя",
             "in": "path",
             "name": "userId",
             "required": true,
             "schema": {
+              "minimum": 1,
               "type": "integer",
               "format": "int64"
             }
@@ -1802,8 +2312,8 @@
                 "example": {
                   "status": "BAD_REQUEST",
                   "reason": "Incorrectly made request.",
-                  "message": "Failed to convert value of type java.lang.String to required type long; nested exception is java.lang.NumberFormatException: For input string: ad",
-                  "timestamp": "2022-09-07 09:10:50"
+                  "message": "getRequestsByUserId.userId: must be greater than 0",
+                  "timestamp": "2024-02-12 17:05:22"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/ApiError"
@@ -1818,8 +2328,8 @@
                 "example": {
                   "status": "NOT_FOUND",
                   "reason": "The required object was not found.",
-                  "message": "User with id=11 was not found",
-                  "timestamp": "2022-09-07 09:10:50"
+                  "message": "User with id=70 was not found.",
+                  "timestamp": "2024-02-12 17:05:52"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/ApiError"
@@ -1829,21 +2339,22 @@
             "description": "Пользователь не найден"
           }
         },
-        "summary": "Получение информации о заявках текущего пользователя на участие в чужих событиях",
+        "summary": "Получение информации о заявках пользователя на участие в событиях",
         "tags": [
           "Private: Запросы на участие"
         ]
       },
       "post": {
-        "description": "Обратите внимание:\n- нельзя добавить повторный запрос  (Ожидается код ошибки 409)\n- инициатор события не может добавить запрос на участие в своём событии (Ожидается код ошибки 409)\n- нельзя участвовать в неопубликованном событии (Ожидается код ошибки 409)\n- если у события достигнут лимит запросов на участие - необходимо вернуть ошибку  (Ожидается код ошибки 409)\n- если для события отключена пре-модерация запросов на участие, то запрос должен автоматически перейти в состояние подтвержденного",
+        "description": "Обратите внимание:\n- нельзя добавить повторный запрос  (Ожидается код ошибки 409)\n- инициатор события не может добавить запрос на участие в своём событии (Ожидается код ошибки 409)\n- нельзя участвовать в неопубликованном событии (Ожидается код ошибки 409)\n- нельзя создать запрос на участие, если у события достигнут лимит участников (Ожидается код ошибки 409)\n- если для события отключена пре-модерация или нет ограничения на количество участников, то запрос автоматически переходит в состояние подтвержденного",
         "operationId": "addParticipationRequest",
         "parameters": [
           {
-            "description": "id текущего пользователя",
+            "description": "id пользователя",
             "in": "path",
             "name": "userId",
             "required": true,
             "schema": {
+              "minimum": 1,
               "type": "integer",
               "format": "int64"
             }
@@ -1854,8 +2365,24 @@
             "name": "eventId",
             "required": true,
             "schema": {
+              "minimum": 1,
               "type": "integer",
               "format": "int64"
+            }
+          },
+          {
+            "description": "видимость события",
+            "in": "query",
+            "name": "visibility",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "FOLLOWERS",
+              "enum": [
+                "FRIENDS",
+                "FOLLOWERS",
+                "NONE"
+              ]
             }
           }
         ],
@@ -1876,8 +2403,8 @@
                 "example": {
                   "status": "BAD_REQUEST",
                   "reason": "Incorrectly made request.",
-                  "message": "Failed to convert value of type java.lang.String to required type long; nested exception is java.lang.NumberFormatException: For input string: ad",
-                  "timestamp": "2022-09-07 09:10:50"
+                  "message": "createRequest.eventId: must be greater than 0",
+                  "timestamp": "2024-02-12 17:29:36"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/ApiError"
@@ -1892,15 +2419,15 @@
                 "example": {
                   "status": "NOT_FOUND",
                   "reason": "The required object was not found.",
-                  "message": "Event with id=13 was not found",
-                  "timestamp": "2022-09-07 09:10:50"
+                  "message": "Event with id=40 was not found.",
+                  "timestamp": "2024-02-12 17:28:21"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/ApiError"
                 }
               }
             },
-            "description": "Событие не найдено или недоступно"
+            "description": "Событие не найдено"
           },
           "409": {
             "content": {
@@ -1909,17 +2436,17 @@
                   "status": "CONFLICT",
                   "reason": "Integrity constraint has been violated.",
                   "message": "could not execute statement; SQL [n/a]; constraint [uq_request]; nested exception is org.hibernate.exception.ConstraintViolationException: could not execute statement",
-                  "timestamp": "2022-09-07 09:10:50"
+                  "timestamp": "2024-02-12 17:26:34"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/ApiError"
                 }
               }
             },
-            "description": "Нарушение целостности данных"
+            "description": "Создание повторной заявки на участие в событии"
           }
         },
-        "summary": "Добавление запроса от текущего пользователя на участие в событии",
+        "summary": "Добавление запроса от пользователя на участие в событии",
         "tags": [
           "Private: Запросы на участие"
         ]
@@ -1930,11 +2457,12 @@
         "operationId": "cancelRequest",
         "parameters": [
           {
-            "description": "id текущего пользователя",
+            "description": "id пользователя",
             "in": "path",
             "name": "userId",
             "required": true,
             "schema": {
+              "minimum": 1,
               "type": "integer",
               "format": "int64"
             }
@@ -1945,6 +2473,7 @@
             "name": "requestId",
             "required": true,
             "schema": {
+              "minimum": 1,
               "type": "integer",
               "format": "int64"
             }
@@ -1961,26 +2490,576 @@
             },
             "description": "Заявка отменена"
           },
-          "404": {
+          "400": {
             "content": {
               "application/json": {
                 "example": {
-                  "status": "NOT_FOUND",
-                  "reason": "The required object was not found.",
-                  "message": "Request with id=2727 was not found",
-                  "timestamp": "2022-09-07 09:10:50"
+                  "status": "BAD_REQUEST",
+                  "reason": "Incorrectly made request.",
+                  "message": "cancelRequest.requestId: must be greater than 0",
+                  "timestamp": "2024-02-12 17:42:15"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/ApiError"
                 }
               }
             },
-            "description": "Запрос не найден или недоступен"
+            "description": "Запрос составлен некорректно"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "NOT_FOUND",
+                  "reason": "The required object was not found.",
+                  "message": "User with id=7 doesn't have the participation request with id=6.",
+                  "timestamp": "2024-02-12 17:41:31"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Запрос не найден"
           }
         },
         "summary": "Отмена своего запроса на участие в событии",
         "tags": [
           "Private: Запросы на участие"
+        ]
+      }
+    },
+    "/users/{userId}/friends/{friendId}": {
+      "post": {
+        "description": "Обратите внимание: \n - до подтверждения дружбы со стороны другого пользователя пользователь является его подписчиком \n - повторно отправить запрос на дружбу нельзя (Ожидается код ошибки 409)",
+        "operationId": "addFriend",
+        "parameters": [
+          {
+            "description": "id пользователя",
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "description": "id пользователя, которого нужно добавить в друзья",
+            "in": "path",
+            "name": "friendId",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Запрос на добавление пользователя в друзья отправлен"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "BAD_REQUEST",
+                  "reason": "Incorrectly made request.",
+                  "message": "addFriend.userId: must be greater than 0",
+                  "timestamp": "2024-02-13 16:27:25"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Запрос составлен некорректно"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "NOT_FOUND",
+                  "reason": "The required object was not found.",
+                  "message": "User with id=2 was not found.",
+                  "timestamp": "2024-02-13 16:24:22"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Пользователь не найден"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "CONFLICT",
+                  "reason": "For the requested operation the conditions are not met.",
+                  "message": "You have already sent friendship request to user with id=6.",
+                  "timestamp": "2024-02-13 16:29:49"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Повторная отправка запроса на добавление в друзья"
+          }
+        },
+        "summary": "Запрос на добавление пользователя в друзья",
+        "tags": [
+          "Private: Дружба и подписки"
+        ]
+      },
+      "delete": {
+        "description": "Обратите внимание: после удаления из друзей пользователь может остаться подписчиком текущего пользователя",
+        "operationId": "deleteFriend",
+        "parameters": [
+          {
+            "description": "id пользователя",
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "description": "id пользователя, которого нужно удалить из друзей",
+            "in": "path",
+            "name": "friendId",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Пользователь удален из друзей"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "BAD_REQUEST",
+                  "reason": "Incorrectly made request.",
+                  "message": "deleteFriend.friendId: must be greater than 0",
+                  "timestamp": "2024-02-13 16:38:21"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Запрос составлен некорректно"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "NOT_FOUND",
+                  "reason": "The required object was not found.",
+                  "message": "You don't following user with id=6 and he isn't your friend.",
+                  "timestamp": "2024-02-13 16:37:13"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Пользователь не найден"
+          }
+        },
+        "summary": "Удаление пользователя из друзей",
+        "tags": [
+          "Private: Дружба и подписки"
+        ]
+      }
+    },
+    "/users/{userId}/friends/{friendId}/cancle": {
+      "patch": {
+        "description": "Обратите внимание: если дружба с этим пользователем уже подтверждена или отклонена, то заявку отклонить нельзя, можно только удалить пользователя из друзей или добавить в друзья, соответственно",
+        "operationId": "cancelFriendshipRequest",
+        "parameters": [
+          {
+            "description": "id пользователя",
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "description": "id пользователя, заявку которого нужно отклонить",
+            "in": "path",
+            "name": "friendId",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Запрос на добавление пользователя в друзья отклонен"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "BAD_REQUEST",
+                  "reason": "Incorrectly made request.",
+                  "message": "cancelFriendshipRequest.friendId: must be greater than 0",
+                  "timestamp": "2024-02-13 16:43:13"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Запрос составлен некорректно"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "NOT_FOUND",
+                  "reason": "The required object was not found.",
+                  "message": "Friendship request from user with id=5 doesn't found.",
+                  "timestamp": "2024-02-13 16:44:16"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Пользователь не найден"
+          }
+        },
+        "summary": "Отклонение запроса на добавление пользователя в друзья",
+        "tags": [
+          "Private: Дружба и подписки"
+        ]
+      }
+    },
+    "/users/{userId}/friends/{followerId}": {
+      "delete": {
+        "description": "Обратите внимание: если заявка от пользователя на дружбу не отклонена, то его нельзя удалить из подписчиков, сначала нужно отклонить заявку",
+        "operationId": "deleteFollower",
+        "parameters": [
+          {
+            "description": "id пользователя",
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "description": "id пользователя, которого нужно удалить из подписчиков",
+            "in": "path",
+            "name": "followerId",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Подписчик удален"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "BAD_REQUEST",
+                  "reason": "Incorrectly made request.",
+                  "message": "deleteFollower.followerId: must be greater than 0",
+                  "timestamp": "2024-02-13 16:55:17"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Запрос составлен некорректно"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "NOT_FOUND",
+                  "reason": "The required object was not found.",
+                  "message": "Follower with id=5 was not found.",
+                  "timestamp": "2024-02-13 16:54:47"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Пользователь не найден"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "CONFLICT",
+                  "reason": "For the requested operation the conditions are not met.",
+                  "message": "You have to cancel friendship request from user with id=6 before removing him from followers.",
+                  "timestamp": "2024-02-13 16:52:36"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Удаление из подписчиков пользователя, заявка которого еще не отклонена"
+          }
+        },
+        "summary": "Удаление пользователя из подписчиков",
+        "tags": [
+          "Private: Дружба и подписки"
+        ]
+      }
+    },
+    "/users/{userId}/friends/requests": {
+      "get": {
+        "operationId": "gettingFriendshipRequests",
+        "parameters": [
+          {
+            "description": "id пользователя",
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserDto"
+                  }
+                }
+              }
+            },
+            "description": "Заявки получены"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "BAD_REQUEST",
+                  "reason": "Incorrectly made request.",
+                  "message": "gettingFriendshipRequests.userId: must be greater than 0",
+                  "timestamp": "2024-02-13 17:03:29"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Запрос составлен некорректно"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "NOT_FOUND",
+                  "reason": "The required object was not found.",
+                  "message": "User with id=11 was not found.",
+                  "timestamp": "2024-02-13 17:04:01"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Пользователь не найден"
+          }
+        },
+        "summary": "Получение заявок на добавление в друзья",
+        "tags": [
+          "Private: Дружба и подписки"
+        ]
+      }
+    },
+    "/users/{userId}/friends": {
+      "get": {
+        "operationId": "getFriends",
+        "parameters": [
+          {
+            "description": "id пользователя",
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserDto"
+                  }
+                }
+              }
+            },
+            "description": "Друзья получены"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "BAD_REQUEST",
+                  "reason": "Incorrectly made request.",
+                  "message": "getFriends.userId: must be greater than 0",
+                  "timestamp": "2024-02-13 17:03:29"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Запрос составлен некорректно"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "NOT_FOUND",
+                  "reason": "The required object was not found.",
+                  "message": "User with id=11 was not found.",
+                  "timestamp": "2024-02-13 17:04:01"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Пользователь не найден"
+          }
+        },
+        "summary": "Получение друзей",
+        "tags": [
+          "Private: Дружба и подписки"
+        ]
+      }
+    },
+    "/users/{userId}/followers": {
+      "get": {
+        "operationId": "getFollowers",
+        "parameters": [
+          {
+            "description": "id пользователя",
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "description": "подписки или подписчиков нужно получить",
+            "in": "query",
+            "name": "type",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "FOLLOWING",
+                "FOLLOWED"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserDto"
+                  }
+                }
+              }
+            },
+            "description": "Подписки или подписчики получены"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "BAD_REQUEST",
+                  "reason": "Incorrectly made request.",
+                  "message": "getFollowers.userId: must be greater than 0",
+                  "timestamp": "2024-02-13 17:03:29"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Запрос составлен некорректно"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "NOT_FOUND",
+                  "reason": "The required object was not found.",
+                  "message": "User with id=11 was not found.",
+                  "timestamp": "2024-02-13 17:04:01"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Пользователь не найден"
+          }
+        },
+        "summary": "Получение подписок или подписчиков",
+        "tags": [
+          "Private: Дружба и подписки"
         ]
       }
     }
@@ -1990,26 +3069,6 @@
       "ApiError": {
         "type": "object",
         "properties": {
-          "errors": {
-            "type": "array",
-            "description": "Список стектрейсов или описания ошибок",
-            "example": [],
-            "items": {
-              "type": "string",
-              "description": "Список стектрейсов или описания ошибок",
-              "example": "[]"
-            }
-          },
-          "message": {
-            "type": "string",
-            "description": "Сообщение об ошибке",
-            "example": "Only pending or canceled events can be changed"
-          },
-          "reason": {
-            "type": "string",
-            "description": "Общее описание причины ошибки",
-            "example": "For the requested operation the conditions are not met."
-          },
           "status": {
             "type": "string",
             "description": "Код статуса HTTP-ответа",
@@ -2085,30 +3144,34 @@
               "511 NETWORK_AUTHENTICATION_REQUIRED"
             ]
           },
+          "reason": {
+            "type": "string",
+            "description": "Общее описание причины ошибки",
+            "example": "For the requested operation the conditions are not met."
+          },
+          "message": {
+            "type": "string",
+            "description": "Сообщение об ошибке",
+            "example": "Only pending or canceled events can be changed"
+          },
           "timestamp": {
             "type": "string",
-            "description": "Дата и время когда произошла ошибка (в формате \"yyyy-MM-dd HH:mm:ss\")",
-            "example": "2022-06-09 06:27:23"
+            "description": "Дата и время ошибки в формате \"yyyy-MM-dd HH:mm:ss\"",
+            "example": "2024-02-12 18:00:59"
           }
         },
         "description": "Сведения об ошибке"
       },
       "CategoryDto": {
-        "required": [
-          "name"
-        ],
         "type": "object",
         "properties": {
           "id": {
             "type": "integer",
             "description": "Идентификатор категории",
             "format": "int64",
-            "readOnly": true,
             "example": 1
           },
           "name": {
-            "maxLength": 50,
-            "minLength": 1,
             "type": "string",
             "description": "Название категории",
             "example": "Концерты"
@@ -2117,60 +3180,11 @@
         "description": "Категория"
       },
       "CompilationDto": {
-        "required": [
-          "id",
-          "pinned",
-          "title"
-        ],
         "type": "object",
         "properties": {
-          "events": {
-            "uniqueItems": true,
-            "type": "array",
-            "description": "Список событий входящих в подборку",
-            "example": [
-              {
-                "annotation": "Эксклюзивность нашего шоу гарантирует привлечение максимальной зрительской аудитории",
-                "category": {
-                  "id": 1,
-                  "name": "Концерты"
-                },
-                "confirmedRequests": 5,
-                "eventDate": "2024-03-10 14:30:00",
-                "id": 1,
-                "initiator": {
-                  "id": 3,
-                  "name": "Фёдоров Матвей"
-                },
-                "paid": true,
-                "title": "Знаменитое шоу 'Летающая кукуруза'",
-                "views": 999
-              },
-              {
-                "annotation": "За почти три десятилетия группа 'Java Core' закрепились на сцене как группа, объединяющая поколения.",
-                "category": {
-                  "id": 1,
-                  "name": "Концерты"
-                },
-                "confirmedRequests": 555,
-                "eventDate": "2025-09-13 21:00:00",
-                "id": 1,
-                "initiator": {
-                  "id": 3,
-                  "name": "Паша Петров"
-                },
-                "paid": true,
-                "title": "Концерт рок-группы 'Java Core'",
-                "views": 991
-              }
-            ],
-            "items": {
-              "$ref": "#/components/schemas/EventShortDto"
-            }
-          },
           "id": {
             "type": "integer",
-            "description": "Идентификатор",
+            "description": "Идентификатор подборки",
             "format": "int64",
             "example": 1
           },
@@ -2183,22 +3197,27 @@
             "type": "string",
             "description": "Заголовок подборки",
             "example": "Летние концерты"
+          },
+          "events": {
+            "uniqueItems": true,
+            "type": "array",
+            "description": "Список событий, входящих в подборку",
+            "items": {
+              "$ref": "#/components/schemas/EventShortDto"
+            }
           }
         },
         "description": "Подборка событий"
       },
       "EventFullDto": {
-        "required": [
-          "annotation",
-          "category",
-          "eventDate",
-          "initiator",
-          "location",
-          "paid",
-          "title"
-        ],
         "type": "object",
         "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Идентификатор",
+            "format": "int64",
+            "example": 1
+          },
           "annotation": {
             "type": "string",
             "description": "Краткое описание",
@@ -2210,52 +3229,57 @@
           "confirmedRequests": {
             "type": "integer",
             "description": "Количество одобренных заявок на участие в данном событии",
-            "format": "int64",
+            "format": "int32",
             "example": 5
-          },
-          "createdOn": {
-            "type": "string",
-            "description": "Дата и время создания события (в формате \"yyyy-MM-dd HH:mm:ss\")",
-            "example": "2022-09-06 11:00:23"
-          },
-          "description": {
-            "type": "string",
-            "description": "Полное описание события",
-            "example": "Что получится, если соединить кукурузу и полёт? Создатели \"Шоу летающей кукурузы\" испытали эту идею на практике и воплотили в жизнь инновационный проект, предлагающий свежий взгляд на развлечения..."
           },
           "eventDate": {
             "type": "string",
-            "description": "Дата и время на которые намечено событие (в формате \"yyyy-MM-dd HH:mm:ss\")",
+            "description": "Дата и время, на которые намечено событие, в формате \"yyyy-MM-dd HH:mm:ss\"",
             "example": "2024-12-31 15:10:05"
-          },
-          "id": {
-            "type": "integer",
-            "description": "Идентификатор",
-            "format": "int64",
-            "example": 1
           },
           "initiator": {
             "$ref": "#/components/schemas/UserShortDto"
-          },
-          "location": {
-            "$ref": "#/components/schemas/Location"
           },
           "paid": {
             "type": "boolean",
             "description": "Нужно ли оплачивать участие",
             "example": true
           },
+          "title": {
+            "type": "string",
+            "description": "Заголовок",
+            "example": "Знаменитое шоу 'Летающая кукуруза'"
+          },
+          "views": {
+            "type": "integer",
+            "description": "Количество просмотров события",
+            "format": "int32",
+            "example": 999
+          },
+          "createdOn": {
+            "type": "string",
+            "description": "Дата и время создания события в формате \"yyyy-MM-dd HH:mm:ss\"",
+            "example": "2024-02-12 18:00:59"
+          },
+          "description": {
+            "type": "string",
+            "description": "Полное описание события",
+            "example": "Что получится, если соединить кукурузу и полёт? Создатели \"Шоу летающей кукурузы\" испытали эту идею на практике и воплотили в жизнь инновационный проект, предлагающий свежий взгляд на развлечения..."
+          },
+          "location": {
+            "$ref": "#/components/schemas/LocationDto"
+          },
           "participantLimit": {
             "type": "integer",
-            "description": "Ограничение на количество участников. Значение 0 - означает отсутствие ограничения",
+            "description": "Ограничение на количество участников. Значение 0 означает отсутствие ограничения",
             "format": "int32",
             "example": 10,
             "default": 0
           },
           "publishedOn": {
             "type": "string",
-            "description": "Дата и время публикации события (в формате \"yyyy-MM-dd HH:mm:ss\")",
-            "example": "2022-09-06 15:10:05"
+            "description": "Дата и время публикации события в формате \"yyyy-MM-dd HH:mm:ss\"",
+            "example": "2024-02-12 18:00:59"
           },
           "requestModeration": {
             "type": "boolean",
@@ -2265,33 +3289,23 @@
           },
           "state": {
             "type": "string",
-            "description": "Список состояний жизненного цикла события",
+            "description": "Состояние события",
             "example": "PUBLISHED",
             "enum": [
               "PENDING",
               "PUBLISHED",
               "CANCELED"
             ]
-          },
-          "title": {
-            "type": "string",
-            "description": "Заголовок",
-            "example": "Знаменитое шоу 'Летающая кукуруза'"
-          },
-          "views": {
-            "type": "integer",
-            "description": "Количество просмотрев события",
-            "format": "int64",
-            "example": 999
           }
-        }
+        },
+        "description": "Событие"
       },
       "EventRequestStatusUpdateRequest": {
         "type": "object",
         "properties": {
           "requestIds": {
             "type": "array",
-            "description": "Идентификаторы запросов на участие в событии текущего пользователя",
+            "description": "Идентификаторы запросов на участие в событии пользователя",
             "example": [
               1,
               2,
@@ -2299,13 +3313,12 @@
             ],
             "items": {
               "type": "integer",
-              "description": "Идентификаторы запросов на участие в событии текущего пользователя",
               "format": "int64"
             }
           },
           "status": {
             "type": "string",
-            "description": "Новый статус запроса на участие в событии текущего пользователя",
+            "description": "Новый статус запроса на участие в событии пользователя",
             "example": "CONFIRMED",
             "enum": [
               "CONFIRMED",
@@ -2313,7 +3326,7 @@
             ]
           }
         },
-        "description": "Изменение статуса запроса на участие в событии текущего пользователя"
+        "description": "Данные для изменения статуса запроса на участие в событии пользователя"
       },
       "EventRequestStatusUpdateResult": {
         "type": "object",
@@ -2334,16 +3347,14 @@
         "description": "Результат подтверждения/отклонения заявок на участие в событии"
       },
       "EventShortDto": {
-        "required": [
-          "annotation",
-          "category",
-          "eventDate",
-          "initiator",
-          "paid",
-          "title"
-        ],
         "type": "object",
         "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Идентификатор",
+            "format": "int64",
+            "example": 1
+          },
           "annotation": {
             "type": "string",
             "description": "Краткое описание",
@@ -2355,19 +3366,13 @@
           "confirmedRequests": {
             "type": "integer",
             "description": "Количество одобренных заявок на участие в данном событии",
-            "format": "int64",
+            "format": "int32",
             "example": 5
           },
           "eventDate": {
             "type": "string",
-            "description": "Дата и время на которые намечено событие (в формате \"yyyy-MM-dd HH:mm:ss\")",
+            "description": "Дата и время, на которые намечено событие, в формате \"yyyy-MM-dd HH:mm:ss\"",
             "example": "2024-12-31 15:10:05"
-          },
-          "id": {
-            "type": "integer",
-            "description": "Идентификатор",
-            "format": "int64",
-            "example": 1
           },
           "initiator": {
             "$ref": "#/components/schemas/UserShortDto"
@@ -2389,45 +3394,13 @@
             "example": 999
           }
         },
-        "description": "Краткая информация о событии",
-        "example": [
-          {
-            "annotation": "Эксклюзивность нашего шоу гарантирует привлечение максимальной зрительской аудитории",
-            "category": {
-              "id": 1,
-              "name": "Концерты"
-            },
-            "confirmedRequests": 5,
-            "eventDate": "2024-03-10 14:30:00",
-            "id": 1,
-            "initiator": {
-              "id": 3,
-              "name": "Фёдоров Матвей"
-            },
-            "paid": true,
-            "title": "Знаменитое шоу 'Летающая кукуруза'",
-            "views": 999
-          },
-          {
-            "annotation": "За почти три десятилетия группа 'Java Core' закрепились на сцене как группа, объединяющая поколения.",
-            "category": {
-              "id": 1,
-              "name": "Концерты"
-            },
-            "confirmedRequests": 555,
-            "eventDate": "2025-09-13 21:00:00",
-            "id": 1,
-            "initiator": {
-              "id": 3,
-              "name": "Паша Петров"
-            },
-            "paid": true,
-            "title": "Концерт рок-группы 'Java Core'",
-            "views": 991
-          }
-        ]
+        "description": "Краткая информация о событии"
       },
-      "Location": {
+      "LocationDto": {
+        "required": [
+          "lat",
+          "lon"
+        ],
         "type": "object",
         "properties": {
           "lat": {
@@ -2459,7 +3432,7 @@
             "example": "Концерты"
           }
         },
-        "description": "Данные для добавления новой категории"
+        "description": "Данные для добавления или изменения категории"
       },
       "NewCompilationDto": {
         "required": [
@@ -2470,7 +3443,7 @@
           "events": {
             "uniqueItems": true,
             "type": "array",
-            "description": "Список идентификаторов событий входящих в подборку",
+            "description": "Список идентификаторов событий, входящих в подборку",
             "example": [
               1,
               2,
@@ -2478,7 +3451,6 @@
             ],
             "items": {
               "type": "integer",
-              "description": "Список идентификаторов событий входящих в подборку",
               "format": "int64"
             }
           },
@@ -2496,7 +3468,7 @@
             "example": "Летние концерты"
           }
         },
-        "description": "Подборка событий"
+        "description": "Данные для создания подборки событий"
       },
       "NewEventDto": {
         "required": [
@@ -2518,7 +3490,7 @@
           },
           "category": {
             "type": "integer",
-            "description": "id категории к которой относится событие",
+            "description": "id категории, к которой относится событие",
             "format": "int64",
             "example": 2
           },
@@ -2531,11 +3503,11 @@
           },
           "eventDate": {
             "type": "string",
-            "description": "Дата и время на которые намечено событие. Дата и время указываются в формате \"yyyy-MM-dd HH:mm:ss\"",
+            "description": "Дата и время, на которые намечено событие в формате \"yyyy-MM-dd HH:mm:ss\"",
             "example": "2024-12-31 15:10:05"
           },
           "location": {
-            "$ref": "#/components/schemas/Location"
+            "$ref": "#/components/schemas/LocationDto"
           },
           "paid": {
             "type": "boolean",
@@ -2544,15 +3516,16 @@
             "default": false
           },
           "participantLimit": {
+            "minimum": 0,
             "type": "integer",
-            "description": "Ограничение на количество участников. Значение 0 - означает отсутствие ограничения",
+            "description": "Ограничение на количество участников. Значение 0 означает отсутствие ограничения",
             "format": "int32",
             "example": 10,
             "default": 0
           },
           "requestModeration": {
             "type": "boolean",
-            "description": "Нужна ли пре-модерация заявок на участие. Если true, то все заявки будут ожидать подтверждения инициатором события. Если false - то будут подтверждаться автоматически.",
+            "description": "Нужна ли пре-модерация заявок на участие.",
             "example": false,
             "default": true
           },
@@ -2564,7 +3537,7 @@
             "example": "Сплав на байдарках"
           }
         },
-        "description": "Новое событие"
+        "description": "Данные для создания события"
       },
       "NewUserRequest": {
         "required": [
@@ -2573,42 +3546,42 @@
         ],
         "type": "object",
         "properties": {
-          "email": {
-            "maxLength": 254,
-            "minLength": 6,
-            "type": "string",
-            "description": "Почтовый адрес",
-            "example": "ivan.petrov@practicummail.ru"
-          },
           "name": {
             "maxLength": 250,
             "minLength": 2,
             "type": "string",
             "description": "Имя",
             "example": "Иван Петров"
+          },
+          "email": {
+            "maxLength": 254,
+            "minLength": 6,
+            "type": "string",
+            "description": "Почтовый адрес",
+            "example": "ivan.petrov@practicummail.ru"
           }
         },
-        "description": "Данные нового пользователя"
+        "description": "Данные для добавления нового пользователя"
       },
       "ParticipationRequestDto": {
         "type": "object",
         "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Идентификатор заявки",
+            "format": "int64",
+            "example": 3
+          },
           "created": {
             "type": "string",
             "description": "Дата и время создания заявки",
-            "example": "2022-09-06T21:10:05.432"
+            "example": "2024-02-12 18:00:59"
           },
           "event": {
             "type": "integer",
             "description": "Идентификатор события",
             "format": "int64",
             "example": 1
-          },
-          "id": {
-            "type": "integer",
-            "description": "Идентификатор заявки",
-            "format": "int64",
-            "example": 3
           },
           "requester": {
             "type": "integer",
@@ -2619,7 +3592,23 @@
           "status": {
             "type": "string",
             "description": "Статус заявки",
-            "example": "PENDING"
+            "example": "PENDING",
+            "enum": [
+              "PENDING",
+              "CONFIRMED",
+              "REJECTED",
+              "CANCELED"
+            ]
+          },
+          "visibility": {
+            "type": "string",
+            "description": "Видимость заявки",
+            "example": "FRIENDS",
+            "enum": [
+              "FRIENDS",
+              "FOLLOWERS",
+              "NONE"
+            ]
           }
         },
         "description": "Заявка на участие в событии"
@@ -2633,9 +3622,13 @@
             "description": "Список id событий подборки для полной замены текущего списка",
             "items": {
               "type": "integer",
-              "description": "Список id событий подборки для полной замены текущего списка",
               "format": "int64"
-            }
+            },
+            "example": [
+              5,
+              6,
+              7
+            ]
           },
           "pinned": {
             "type": "boolean",
@@ -2650,7 +3643,7 @@
             "example": "Необычные фотозоны"
           }
         },
-        "description": "Изменение информации о подборке событий. Если поле в запросе не указано (равно null) - значит изменение этих данных не треубется."
+        "description": "Данные для изменения подборки событий"
       },
       "UpdateEventAdminRequest": {
         "type": "object",
@@ -2659,10 +3652,11 @@
             "maxLength": 2000,
             "minLength": 20,
             "type": "string",
-            "description": "Новая аннотация",
+            "description": "Новое краткое описание",
             "example": "Сап прогулки по рекам и каналам – это возможность увидеть Практикбург с другого ракурса"
           },
           "category": {
+            "minimum": 1,
             "type": "integer",
             "description": "Новая категория",
             "format": "int64",
@@ -2677,11 +3671,11 @@
           },
           "eventDate": {
             "type": "string",
-            "description": "Новые дата и время на которые намечено событие. Дата и время указываются в формате \"yyyy-MM-dd HH:mm:ss\"",
-            "example": "2023-10-11 23:10:05"
+            "description": "Новые дата и время события в формате \"yyyy-MM-dd HH:mm:ss\"",
+            "example": "2024-10-11 23:10:05"
           },
           "location": {
-            "$ref": "#/components/schemas/Location"
+            "$ref": "#/components/schemas/LocationDto"
           },
           "paid": {
             "type": "boolean",
@@ -2689,6 +3683,7 @@
             "example": true
           },
           "participantLimit": {
+            "minimum": 0,
             "type": "integer",
             "description": "Новый лимит пользователей",
             "format": "int32",
@@ -2699,23 +3694,23 @@
             "description": "Нужна ли пре-модерация заявок на участие",
             "example": false
           },
-          "stateAction": {
-            "type": "string",
-            "description": "Новое состояние события",
-            "enum": [
-              "PUBLISH_EVENT",
-              "REJECT_EVENT"
-            ]
-          },
           "title": {
             "maxLength": 120,
             "minLength": 3,
             "type": "string",
             "description": "Новый заголовок",
             "example": "Сап прогулки по рекам и каналам"
+          },
+          "stateAction": {
+            "type": "string",
+            "description": "Изменение состояния события",
+            "enum": [
+              "PUBLISH_EVENT",
+              "REJECT_EVENT"
+            ]
           }
         },
-        "description": "Данные для изменения информации о событии. Если поле в запросе не указано (равно null) - значит изменение этих данных не треубется."
+        "description": "Данные для изменения информации о событии админом"
       },
       "UpdateEventUserRequest": {
         "type": "object",
@@ -2724,10 +3719,11 @@
             "maxLength": 2000,
             "minLength": 20,
             "type": "string",
-            "description": "Новая аннотация",
+            "description": "Новое краткое описание",
             "example": "Сап прогулки по рекам и каналам – это возможность увидеть Практикбург с другого ракурса"
           },
           "category": {
+            "minimum": 1,
             "type": "integer",
             "description": "Новая категория",
             "format": "int64",
@@ -2742,11 +3738,11 @@
           },
           "eventDate": {
             "type": "string",
-            "description": "Новые дата и время на которые намечено событие. Дата и время указываются в формате \"yyyy-MM-dd HH:mm:ss\"",
+            "description": "Новые дата и время события в формате \"yyyy-MM-dd HH:mm:ss\"",
             "example": "2023-10-11 23:10:05"
           },
           "location": {
-            "$ref": "#/components/schemas/Location"
+            "$ref": "#/components/schemas/LocationDto"
           },
           "paid": {
             "type": "boolean",
@@ -2754,6 +3750,7 @@
             "example": true
           },
           "participantLimit": {
+            "minimum": 0,
             "type": "integer",
             "description": "Новый лимит пользователей",
             "format": "int32",
@@ -2764,37 +3761,28 @@
             "description": "Нужна ли пре-модерация заявок на участие",
             "example": false
           },
-          "stateAction": {
-            "type": "string",
-            "description": "Изменение сотояния события",
-            "example": "CANCEL_REVIEW",
-            "enum": [
-              "SEND_TO_REVIEW",
-              "CANCEL_REVIEW"
-            ]
-          },
           "title": {
             "maxLength": 120,
             "minLength": 3,
             "type": "string",
             "description": "Новый заголовок",
             "example": "Сап прогулки по рекам и каналам"
+          },
+          "stateAction": {
+            "type": "string",
+            "description": "Изменение состояния события",
+            "example": "CANCEL_REVIEW",
+            "enum": [
+              "SEND_TO_REVIEW",
+              "CANCEL_REVIEW"
+            ]
           }
         },
-        "description": "Данные для изменения информации о событии. Если поле в запросе не указано (равно null) - значит изменение этих данных не треубется."
+        "description": "Данные для изменения информации о событии пользователем"
       },
       "UserDto": {
-        "required": [
-          "email",
-          "name"
-        ],
         "type": "object",
         "properties": {
-          "email": {
-            "type": "string",
-            "description": "Почтовый адрес",
-            "example": "petrov.i@practicummail.ru"
-          },
           "id": {
             "type": "integer",
             "description": "Идентификатор",
@@ -2806,15 +3794,16 @@
             "type": "string",
             "description": "Имя",
             "example": "Петров Иван"
+          },
+          "email": {
+            "type": "string",
+            "description": "Почтовый адрес",
+            "example": "petrov.i@practicummail.ru"
           }
         },
         "description": "Пользователь"
       },
       "UserShortDto": {
-        "required": [
-          "id",
-          "name"
-        ],
         "type": "object",
         "properties": {
           "id": {
@@ -2829,7 +3818,7 @@
             "example": "Фёдоров Матвей"
           }
         },
-        "description": "Пользователь (краткая информация)"
+        "description": "Краткая информация о пользователе"
       }
     }
   }

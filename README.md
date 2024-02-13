@@ -39,7 +39,9 @@ docker compose up
 В application.properties сервисов можно посмотреть доступные профили для более удобного запуска при разработке и тестировании.
 
 ## Использование
-
+API приложения:
+1) [Спецификация основного сервиса](https://raw.githubusercontent.com/Natal1a-Chuklina/java-explore-with-me/main/ewm-main-service-spec.json)
+2) [Спецификация сервиса статистики](https://raw.githubusercontent.com/Natal1a-Chuklina/java-explore-with-me/main/ewm-stats-service-spec.json)
 ## Стэк технологий
 * Spring Boot
 * REST

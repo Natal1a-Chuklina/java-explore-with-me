@@ -22,10 +22,9 @@
         "tags": [
           "Stats"
         ],
-        "summary": "Сохранение информации о том, что к эндпоинту был запрос.",
+        "summary": "Сохранение информации о том, что к эндпоинту был запрос",
         "operationId": "hit",
         "requestBody": {
-          "description": "данные запроса",
           "content": {
             "application/json": {
               "schema": {
@@ -63,7 +62,7 @@
         "tags": [
           "Stats"
         ],
-        "summary": "Получение статистики по посещениям.",
+        "summary": "Получение статистики по посещениям",
         "operationId": "getStats",
         "parameters": [
           {
@@ -109,7 +108,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Статистика собрана",
+            "description": "Статистика получена",
             "content": {
               "application/json": {
                 "schema": {
@@ -262,7 +261,8 @@
             "description": "Дата и время, когда был совершен запрос к эндпоинту, в формате \"yyyy-MM-dd HH:mm:ss\"",
             "example": "2024-02-08 17:06:25"
           }
-        }
+        },
+        "description": "Данные для сохранения информации о запросе"
       },
       "EndpointStats": {
         "type": "object",
@@ -283,7 +283,8 @@
             "format": "int64",
             "example": 6
           }
-        }
+        },
+        "description": "Статистика"
       }
     }
   }
